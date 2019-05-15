@@ -59,6 +59,8 @@ Prepare the input fitter data file (**`data_glimpse+`**) following the guideline
 
 Other surveys could be substituted (e.g. *WISE* for *Spitzer*/IRAC is an obvious choice), but the ORDER that photometry points appear in the data file should not be changed. This pipeline also supports adding VVV/UKIDSS *YZ*, if available, in the filters 1 & 2 positions, in which case `n=12`.
 
+I **strongly recommend** selecting the better of the duplicated 2MASS and UKIDSS/VVV *JHK(s)* fluxes and setting the flags for the *unused* fluxes to 0 initially. This will facilitate the filtering out of non-excess sources even in cases where there is disagreement in the near-IR fluxes due to variability or blending of sources. My own procedure for creating `data_glimpse+` (below) does exactly this, and the unused photometry can be re-activated later when fitting with YSO models.
+
 ### An automated option for producing the fitter data file 
 I have included with this distribution an `IDL` procedure, `glimpseplus2data.pro`, that automatically creates the fitter data file from a `.fits` table containing the requisite photometry columns. **WARNING: Currently this works only for GLIMPSE, not *WISE* or other MIR catalog formats.** 
 
@@ -134,12 +136,64 @@ This set of color cuts, described by [Povich et al. (2011)](https://ui.adsabs.ha
     filters = ['UDSSJ', 'UDSSH', 'UDSSK', '2J', '2H', '2K', 'I1', 'I2', 'I3', 'I4']
     apertures = [2.0, 2.0, 2.0, 3., 3., 3., 3., 3., 3., 3.] * u.arcsec
 
-The SED `models_pms` set is aperture-independent, so the `apertures` variable doesn't matter other than requiring the correct length. Similarly, `distance_range=[min,max]` is required but does nothing since these models are scale-free.
+The `models_kurucz` set is aperture-independent, so the `apertures` variable doesn't matter as long as it has the correct length. Similarly, `distance_range=[min,max]` is required but does nothing since these models are scale-free.
 Note these filter names are *specific* to the pre-convolved model SEDs and must match the filenames in the `models_pms/convolved` directory. You can [convolve the SED models with new broadband filters](https://sedfitter.readthedocs.io/en/stable/convolution.html) (I cannot guarantee that all UKIDSS and VVV filters are included in the `models_kurucz` distribution) using the `new_filt.py` module included with this package.
+
+ **Important:** In the `fit()` call below make sure the `av_range=[]` reflects the maximum (and minimum if nonzero) extinction estimated from the *JHK* color-color diagram above. (It is fine—perhaps even preferable—if the maximum extinction exceeds the value of `maxav` used in the IDL> `malmcullav` call above.)
  
-	# Fit!  Use the Max Av you determined from the CCD;
-	this can (maybe should) exceed the MAXAV used for MALMCULL AV
-fit('data_glimpse+keep', filters, apertures, model_dir_kurucz, 'stellar_keep.fitinfo', n_data_min=4, extinction_law=extinction, distance_range=[1.5, 2.] * u.kpc, av_range=[0., 50.], output_format=('N',1))
+**>>> 
+
+    fit('data_glimpse+keep', filters, apertures, model_dir_kurucz, 'stellar_keep.fitinfo', n_data_min=4, 
+	extinction_law=extinction, distance_range=[1.5, 2.] * u.kpc, av_range=[0., 50.], output_format=('N',1))
+		
+Split the output into well-fit versus poorly-fit. After much testing, I recommend using `cpd=9.` as the cutoff for well-fit models from the `models_kurucz` set applied to this set of broadband photometry used in `glimpse_data+keep`.
+		
+**>>>
+
+    from sedfitter import filter_output
+    filter_output('stellar_keep.fitinfo', cpd=9.) 
+
+Write SED fit parameters to a text file (*badly-fit sources only*) and create `data_glimpse+ysoc` for subsequent fitting with YSO models.
+
+**>>>
+
+    from sedfitter import write_parameters
+    write_parameters('stellar_keep.fitinfo_bad','pars_stellar_bad9.txt')
+    
+**IDL>
+	
+    fitinfobad9 = 'pars_stellar_bad9.txt'
+    data_parent='data_glimpse+keep'
+    fitinfo2data,fitinfobad9,data_parent,'data_glimpse+sb9'
+    ds9regfromdata,'data_glimpse+sb9','data_glimpse+sb9.reg',color='red'
+    data_activate,'data_glimpse+sb9','data_glimpse+ysoc',nwav=nwav
+    
+
+## RECOMMENDED QUALITY-CONTROL CHECKS
+
+### Check the spatial distributions of the candidate YSOs on an image of the target field.
+
+    ds9 ../$TARGET.mch1.fits -region data_glimpse+sb9.reg &
+
+Candidate YSOs should appear clustered in or near molecular clouds, IR dark clouds, on the rims of bubbles, and/or with known young stellar clusters in the field. If you judge that your YSO candidates dominated by a distributed, likely contaminating population, consider setting `cpd>9.` and rerunning `filter_output`.
+
+### Plot up some badly-fit SEDs to assess why they went wrong.
+
+**>>>
+
+    from sedfitter import plot
+    plot('stellar_keep.fitinfo_bad', 'plots_sb9')
+
+(Some target regions could contain thousands of YSO candidates. It's fine to kill the above command after awhile with Control-C if you don't want to make thousands of plots!)
+
+If you judge that a substantial number of YSO candidates in these plots *should* have been well-fit by stellar photospheres, you can rerun `filter_output` above with `cpd>9.`
+ 
+
+## NEXT STEPS:
+
+Fit the sources in `data_glimpse+ysoc` with YSO models from Robitaille (2017) following the recipe in `sedfitting_procedure_ysos`.
+
+
 
    
  
