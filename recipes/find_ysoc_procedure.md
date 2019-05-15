@@ -3,15 +3,15 @@
 **Authors: M. S. Povich & T. P. Robitaille**
 
 ## Description
-This recipe guides you through a series of color selections and SED fitting of reddened stellar photospheres to identify a sample of candidate young stellar objects (YSOs) with mid-IR excess emission in a specified region of the GLIMPSE or similar survey with *Spitzer* (or *WISE*). The final science product is an ASCII file called `data_glimpse+ysoc` that can be used for subsequent SED fitting classification analysis of YSOs.
+This recipe guides you through a series of color selections and SED fitting of reddened stellar photospheres to identify a sample of candidate young stellar objects (YSOs) with mid-IR excess emission in a specified region of GLIMPSE or a similar survey with *Spitzer* (or *WISE*). This general approach has been applied extensively to catalog YSOs in Galactic star-forming regions that suffer a high degree of contamination from field stars, in particular reddened background giants ([Povich et al. 2009](https://doi.org/10.1088/0004-637X/696/2/1278), [Povich & Whitney 2010](https://doi.org/10.1088/2041-8205/714/2/L285), Povich et al. [2011](https://doi.org/10.1088/0067-0049/194/1/14), [2013](https://doi.org/10.1088/0067-0049/209/2/31), [2016](https://doi.org/10.3847/0004-637X/825/2/125)). The end product is an ASCII file called `data_glimpse+ysoc` that can be used for subsequent SED fitting classification analysis of YSOs.
 
 ## Version History
 
 * Original sedfitting_procedure_ukidss-mir — 2011-08-24 by M. S. Povich 
-* Updated to use  [`python sedfitter`](https://github.com/astrofrog/sedfitter) — 2018-07-23 by M. S. Povich 
+* Updated to use the [`python sedfitter`](https://github.com/astrofrog/sedfitter) — 2018-07-23 by M. S. Povich 
 * CURRENT (v1.0) — 2019-05-15 by M. S. Povich
 
- I recommend using two different terminal windows simultaneously, one in `bash` and the other in `tcsh`. The correct shell in which to execute each block of command is indicated as follows:
+I recommend using two different terminal windows simultaneously, one in `bash` and the other in `tcsh`. The correct shell in which to execute each block of command is indicated as follows:
  
   * `python` command blocks are preceded by **>>>**
   * `tcsh/IDL` command blocks are preceded by **%/IDL>**
@@ -119,7 +119,7 @@ This set of color cuts, described by [Povich et al. (2011)](https://ui.adsabs.ha
 
 **Preliminary step:** The two extinction laws that I use are packaged in the `ex_law` subdirectory of this repository. Place a copy of `ex_law_gl.par` into your `$TARGET/sedfitter` directory.
 
-**>>>
+**>>>**
 
     from astropy import units as u
     from sedfitter import fit
@@ -141,26 +141,26 @@ Note these filter names are *specific* to the pre-convolved model SEDs and must 
 
  **Important:** In the `fit()` call below make sure the `av_range=[]` reflects the maximum (and minimum if nonzero) extinction estimated from the *JHK* color-color diagram above. (It is fine—perhaps even preferable—if the maximum extinction exceeds the value of `maxav` used in the IDL> `malmcullav` call above.)
  
-**>>> 
+**>>>** 
 
     fit('data_glimpse+keep', filters, apertures, model_dir_kurucz, 'stellar_keep.fitinfo', n_data_min=4, 
 	extinction_law=extinction, distance_range=[1.5, 2.] * u.kpc, av_range=[0., 50.], output_format=('N',1))
 		
 Split the output into well-fit versus poorly-fit. After much testing, I recommend using `cpd=9.` as the cutoff for well-fit models from the `models_kurucz` set applied to this set of broadband photometry used in `glimpse_data+keep`.
 		
-**>>>
+**>>>**
 
     from sedfitter import filter_output
     filter_output('stellar_keep.fitinfo', cpd=9.) 
 
 Write SED fit parameters to a text file (*badly-fit sources only*) and create `data_glimpse+ysoc` for subsequent fitting with YSO models.
 
-**>>>
+**>>>**
 
     from sedfitter import write_parameters
     write_parameters('stellar_keep.fitinfo_bad','pars_stellar_bad9.txt')
     
-**IDL>
+**IDL>**
 	
     fitinfobad9 = 'pars_stellar_bad9.txt'
     data_parent='data_glimpse+keep'
@@ -173,13 +173,15 @@ Write SED fit parameters to a text file (*badly-fit sources only*) and create `d
 
 ### Check the spatial distributions of the candidate YSOs on an image of the target field.
 
+**%**
+
     ds9 ../$TARGET.mch1.fits -region data_glimpse+sb9.reg &
 
 Candidate YSOs should appear clustered in or near molecular clouds, IR dark clouds, on the rims of bubbles, and/or with known young stellar clusters in the field. If you judge that your YSO candidates dominated by a distributed, likely contaminating population, consider setting `cpd>9.` and rerunning `filter_output`.
 
 ### Plot up some badly-fit SEDs to assess why they went wrong.
 
-**>>>
+**>>>**
 
     from sedfitter import plot
     plot('stellar_keep.fitinfo_bad', 'plots_sb9')
