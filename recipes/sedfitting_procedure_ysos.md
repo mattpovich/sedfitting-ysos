@@ -47,14 +47,10 @@ Make sure you have the following libraries on your IDL path:
 
 ## TARGET-SPECIFIC SETUP
 
-**>>>**
-
-    TARGET='m17swex'  # python EXAMPLE. **Choose your own target name.**
+**>>>** `TARGET='m17swex'  # python EXAMPLE. **Choose your own target name.**`
 
 
-**%**
-
-    setenv TARGET m17swex  # tcsh EXAMPLE. **Choose your own target name (must match above)**
+**%** `setenv TARGET m17swex  # tcsh EXAMPLE. **Choose your own target name (must match above)**`
 
 It is a good idea to name your working directory `$TARGET/sedfitter`, e.g. (in `tcsh`):
 
@@ -111,96 +107,92 @@ In my experience, the majority of YSO candidates identifiable with IRAC lack fir
     mfe = 0.10 ;Recommend NOT going lower than this.
     mipsfitapphot,mipsmosaic,data_in,data_out,photlist,apreg=regfile,aprad=3.5,anrad=7.,snlim=snlim,min_frac_errs=mfe,nwav=nwav
 
-OPTIONAL. Visually review the extraction results on the 24 µm image. 
+OPTIONAL. Visually review the extraction results on the 24 µm image. In the regionfile created, the photometry apertures are colored according to detections (creen circles), bad-pixels/saturation (black), or upper limits (red). Background annuli are colored white.
 
 **%** `ds9 ../$TARGET.mm24.fits -region mipsmerger_ysoc_apertures.reg &`
 
 If desired, iterate the above with modified values of aprad (aperture radius in arcsecond), anrad (annular background inner radius, in arcsec), or snlim (minimum S/N for a detection).
 
 
+## Fit the 1-24 µm SEDs of YSO candidates with R17 YSO model sets.
 
+**Preliminary step:** The two extinction laws that I use are packaged in the `ex_law` subdirectory of this repository. Place a copy of `ex_law_mc.par` into your `$TARGET/sedfitter` directory.
 
----------------------------------
-Fit the YSO candidates list with R17 YSO model sets.
+**Important!** After some experimentation on two test fields, I selected `cpd=4.` as the default value to separate well-fit from poorly-fit sources. But I recommend you experiment to settle on the optimal value, as this is likely to depend on the data set and selection criteria used.
 
+*Note that the final command in the block below can take some time to run. On my MacBook Pro (2.7 GHz Intel Core i5, 16 GB RAM) the SED fitting for all included model sets takes ~1 hour per 500 sources fit.*
 
->>>
+**>>>**
 
-from fit_multi import fit_multiyso
-extinction24_file = '/Users/mspovich/research/ysomodels/ex_law_mc.par'
-models_topdir = '/Users/mspovich/research/ysomodels'
+    from astropy import units as u
+    from fit_multi import fit_multiyso
+    extinction24_file = 'ex_law_mc.par'
+    models_topdir = <path to your directory containing all the YSO model subdirectories> # Mine is called 'ysomodels'
 
-data = 'data_glimpse+ysoc_ugos_24um'
+    data = 'data_glimpse+ysoc_ugos_24um'
 
-#UKIDSS example
-filters = ['UDSSJ', 'UDSSH', 'UDSSK', '2J', '2H', '2K', 'I1', 'I2', 'I3', 'I4', 'M1'] 
-apertures = [2., 2., 2., 3., 3., 3., 3., 3., 3., 3., 7.] * u.arcsec
+    #UKIDSS example. NOTE filter names MUST match filenames in the `ysomodels/*/convolved` subdirectories
+    filters = ['UDSSJ', 'UDSSH', 'UDSSK', '2J', '2H', '2K', 'I1', 'I2', 'I3', 'I4', 'M1'] 
+    apertures = [2., 2., 2., 3., 3., 3., 3., 3., 3., 3., 7.] * u.arcsec
 
-#VVV example
-filters = ['VVVZ', 'VVVY', 'VVVJ', 'VVVH', 'VVVK', '2J', '2H', '2K', 'I1', 'I2', 'I3', 'I4', 'M1'] 
-apertures = [2., 2., 2., 2., 2., 3., 3., 3., 3., 3., 3., 3., 7.] * u.arcsec
+    #VVV example
+    filters = ['VVVZ', 'VVVY', 'VVVJ', 'VVVH', 'VVVK', '2J', '2H', '2K', 'I1', 'I2', 'I3', 'I4', 'M1'] 
+    apertures = [2., 2., 2., 2., 2., 3., 3., 3., 3., 3., 3., 3., 7.] * u.arcsec
 
-fit_multiyso(data, filters, apertures, models_topdir,
+    fit_multiyso(data, filters, apertures, models_topdir,
 		   extinction_file=extinction24_file,
 		   n_data_min=3,  output_format=('F',6),
 		   distance_range=[2.9, 3.3] * u.kpc,
-		   av_range=[0.,100.], cpd=9.)
-
-#OPTIONAL: Plot up the good (and bad) SED fits (FOR EXAMPLE):
-from sedfitter import plot
-plot('01_sp--s-i.fitinfo_good', 'plots_01g4') 
-plot('01_sp--s-i.fitinfo_bad', 'plots_01b4') 
-plot('02_sp--h-i.fitinfo_good', 'plots_02g4') 
-plot('02_sp--h-i.fitinfo_bad', 'plots_02b4') 
+		   av_range=[0.,100.], cpd=4.)
 
 
-##OPTIONAL: Parameter plots
-from sedfitter import plot_params_2d
+OPTIONAL: Plot up some good (and bad) SED fits. The example below compares one disk-only with one disk+envelope model set:
 
-##EXAMPLE of a 2-d parameter plot, inclination vs. disk mass to suss out physically improbable models (very massive disks, inclinations near face- or edge-on). 
-plot_params_2d('02_sp--h-i.fitinfo_good', 'disk.mass', 'inclination', 'plots_02g4_mdisk_incl', log_x=True, log_y=False, select_format=('A', -1)) 
+**>>>**
+    
+    from sedfitter import plot
+    plot('01_sp--s-i.fitinfo_good', 'plots_01g4') 
+    plot('01_sp--s-i.fitinfo_bad', 'plots_01b4') 
+    plot('02_sp--h-i.fitinfo_good', 'plots_16g4') 
+    plot('02_sp--h-i.fitinfo_bad', 'plots_16b4') 
 
-##EXAMPLE of a 2-d parameter plot, key STELLAR parameters. 
-plot_params_2d('02_sp--h-i.fitinfo_good', 'star.temperature', 'star.radius', 'plots_02g4_reff_rstar', log_x=True, log_y=True, select_format=('A', -1)) 
+Based on reviewing plots like these, you can revise the goodness-of-fit criterion `cpd` and iterate the above.
 
+Once you are satisfied with your goodness-of-fit criterion, send all well-fit models into IDL save files in the `results_ysoc` directory.
+This combines the best-fit models from all sets into SINGLE parameter tables for each source, choosing between model sets using the "Occam's razor" rule described by Robitaille (2017).
 
-#Send all well-fit models into IDL save files, in the results_ysoc
- directory.
- Combines all model sets fit into SINGLE parameter tables for each source.
+**IDL>**
 
-%
-   IDL>
-   data = 'data_glimpse+ysoc_ugos_24um'
-   cpdlab = '04'  ;String label for cpd cut given to fit_multiyso in Python
-   spawn,'ls pars_*g'+cpdlab+'.txt',infiles 
-   r17_pars2idl, infiles, 'results_ysoc', data_parent=data,filter='F6'
+    data = 'data_glimpse+ysoc_ugos_24um'
+    spawn,'ls pars_*g04.txt',infiles 
+    r17_pars2idl, infiles, 'results_ysoc', data_parent=data,filter='F6'
+    
+**Optional.** Free up disk space, for example (cpd=4):
 
-%
- # Once you've successfully made the IDL save files, free up disk
- space! EXAMPLE:
- 
-tar cvzf pars_r17g04.tgz pars_*g04.txt  #if you want to keep these at all!
-'rm' pars_*g04.txt  
+**%**
+    tar cvzf fitinfo_r17_cpd04.tgz *sp*.fitinfo*
+    'rm' pars_*g04.txt  
 
-=============================================================================
-CREATE FITS TABLE SUMMARIZING RESULTS  ($TARGET.ised.fits)
+## CREATE THE `$TARGET.ised.fits` SUMMARIZING THE SED FITTING RESULTS  
 
 Included steps:
-FLAG CANDIDATE GALAXIES AND AGN (galflag.pro)
-FLAG CANDIDATE AGB STARS
-ASSIGN YSO STAGES (stageflag_r17.pro)
+* FLAG CANDIDATE GALAXIES AND AGN (`galflag_phot.pro`)
+* FLAG CANDIDATE AGB STARS
+* ASSIGN YSO STAGES (`stageflag_r17.pro`)
 
-NOTE: The regionfile *xfov.reg must contain one or more non-overlapping polygons in the fk5 decimal degree coordinate system.
+NOTE: The (OPTIONAL) regionfile *xfov.reg must contain one (or more) non-overlapping polygons in the fk5 decimal degree coordinate system.
 
-  idl
-     xfov = '../'+target+'.xfov.reg'	
+**IDL>**
+
+     xfov = '../'+target+'.xfov.reg'	;OPTIONAL!
      create_ised_r17, xfov=xfov
-  exit
 
-  ln ised_r17.fits ../$TARGET.ised.fits
-  ln ised_stageflag.reg ../$TARGET.stageflag.reg
+**%**
+    
+    ln ised_r17.fits ../$TARGET.ised.fits
+    ln ised_stageflag.reg ../$TARGET.stageflag.reg
 
-END OF RECIPE
+
 
 
 
