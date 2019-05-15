@@ -90,13 +90,13 @@ Plot and visually inspect the *J – H* vs. *H - K* color-color diagram of the s
 
 **IDL>**
 
-   	data = 'data_xir'
-	   vvv = 0   ; Set to 1 if if using VVV catalog instead of UKIDSS
-	   if not vvv then mk = 1
-	   magfromdata,data,0,j,nwav=10,mk=mk
-	   magfromdata,data,1,h,nwav=10,mk=mk
-	   magfromdata,data,2,k,nwav=10,mk=mk
-	   plot_nircc_rv,j,h,k,twomass=vvv
+    data = 'data_xir'
+    vvv = 0   ; Set to 1 if if using VVV catalog instead of UKIDSS
+    if not vvv then mk = 1
+    magfromdata,data,0,j,nwav=10,mk=mk
+    magfromdata,data,1,h,nwav=10,mk=mk
+    magfromdata,data,2,k,nwav=10,mk=mk
+    plot_nircc_rv,j,h,k,twomass=vvv
 	
 Estimate the maximum reddening in *Av* magnitudes  by comparing the locus
   of stars to the reddening vectors (marked at intervals of *Av* = 5
@@ -104,7 +104,7 @@ Estimate the maximum reddening in *Av* magnitudes  by comparing the locus
   
 ## Filter out sources with colors consistent with stars, malmquist biases, and other photometry issues generally affecting longer wavelengths
 
-This set of color cuts, described by [Povich et al. (2011)](https://ui.adsabs.harvard.edu/abs/2011ApJS..194...14P/abstract), gets rid of the vast majority of non-excess and "marginal"-excess sources, which greatly speeds up the next step and saves disk space.
+This set of color cuts, described by [Povich et al. (2011)](https://doi.org/10.1088/0067-0049/194/1/14), gets rid of the vast majority of non-excess and "marginal"-excess sources, which greatly speeds up the next step and saves disk space.
 
 **IDL>**
 
@@ -136,7 +136,7 @@ This set of color cuts, described by [Povich et al. (2011)](https://ui.adsabs.ha
     filters = ['UDSSJ', 'UDSSH', 'UDSSK', '2J', '2H', '2K', 'I1', 'I2', 'I3', 'I4']
     apertures = [2.0, 2.0, 2.0, 3., 3., 3., 3., 3., 3., 3.] * u.arcsec
 
-The `models_kurucz` set is aperture-independent, so the `apertures` variable doesn't matter as long as it has the correct length. Similarly, `distance_range=[min,max]` is required but does nothing since these models are scale-free.
+The `models_kurucz` stellar atmosphere SEDs are aperture-independent, so the `apertures` variable doesn't matter as long as it has the correct length. Similarly, `distance_range=[min,max]` is required but does nothing since these models are scale-free.
 Note these filter names are *specific* to the pre-convolved model SEDs and must match the filenames in the `models_pms/convolved` directory. You can [convolve the SED models with new broadband filters](https://sedfitter.readthedocs.io/en/stable/convolution.html) (I cannot guarantee that all UKIDSS and VVV filters are included in the `models_kurucz` distribution) using the `new_filt.py` module included with this package.
 
  **Important:** In the `fit()` call below make sure the `av_range=[]` reflects the maximum (and minimum if nonzero) extinction estimated from the *JHK* color-color diagram above. (It is fine—perhaps even preferable—if the maximum extinction exceeds the value of `maxav` used in the IDL> `malmcullav` call above.)
@@ -171,7 +171,7 @@ Write SED fit parameters to a text file (*badly-fit sources only*) and create `d
 
 ## RECOMMENDED QUALITY-CONTROL CHECKS
 
-### Check the spatial distributions of the candidate YSOs on an image of the target field.
+### Examine the spatial distributions of the candidate YSOs on an image of the target field.
 
 **%**
 
