@@ -1,57 +1,70 @@
-sedfitting_procedure_ukidss-mir_PYTHON.txt
-Original sedfitting_procedure_ukidss-mir 2011-08-24 by M. S. Povich
-UPDATED to use PYTHON sedfitter software 2018-07-23 by M. S. Povich
-UPDATED to take Pat's new GLIMPSE+ matched tables as input 2019-05-03
-by M. S. Povich
+# `sedfitting_procedure_ysos.txt`
 
-This recipe guides you through the steps of performing a basic SED
-fitting classification for the combined Spitzer, 2MASS, and UKIDSS (or
-VVV) catalog sources in a specified target field. UNLIKE the original MYStIX version, this assumes you have a MIPS 24 um mosaic available as well!
+**Authors: M. S. Povich & T. P. Robitaille**
 
-The final science product is an IDL save file called <target>.ised.sav. 
+## Description
 
-INITIAL SETUP
+This recipe guides you through the steps of fitting multiple SED models from [Robitaille (2017)](https://doi.org/10.1051/0004-6361/201425486) to combined *Spitzer*, 2MASS, and UKIDSS (or VVV) candidate YSOs in a specified target field.
 
-Get Tom's sedfitter software and install it following the instructions
+This pipeline creates two final science products:
+1. A summary table of the YSOs and SED fit classifications called `<target>.ised.fits`.
+1. A directory called `results_ysoc` containing IDL save files of the SED model parameters for each candidate YSO. 
+
+## Version History
+
+* Original sedfitting_procedure_ukidss-mir — 2011-08-24 by M. S. Povich 
+* Updated to use the [`python sedfitter`](https://github.com/astrofrog/sedfitter) — 2018-07-23 by M. S. Povich 
+* CURRENT (v1.0) — 2019-05-15 by M. S. Povich
+
+I recommend using two different terminal windows simultaneously, one in `bash` and the other in `tcsh`. The correct shell in which to execute each block of command is indicated as follows:
+ 
+  * `python` command blocks are preceded by **>>>**
+  * `tcsh/IDL` command blocks are preceded by **%/IDL>**
+
+
+## INITIAL SETUP
+
+Get Tom Robitaille's sedfitter software and install it following the instructions
 at http://sedfitter.readthedocs.io/en/stable/installation.html
 
-#I am using this version of python, which I need to
- run in a bash shell:
+Download the following 6 SED model sets from https://doi.org/10.5281/zenodo.166732 (there are 17 model sets total; these are the only ones used by this pipeline), expane the `*tar.gz` archives and —> prepend the model set number to each directory
 
- Python 3.6.5 :: Anaconda, Inc.
- 
- IDL commands will need to be executed in tcsh,
- so we require two different terminal windows open in different shells.
- 
-  ### Python command blocks are preceded by ">>>"
-  ### tcsh/IDL command blocks are preceded by "%/IDL>"
+* `sp--s-i.tar.gz —> 01_sp--s-i.tar` 
+* `sp--h-i.tar.gz`
+* `spu-smi.tar.gz`
+* `spu-hmi.tar.gz`
+* `spubsmi.tar.gz`
+* `spubhim.tar.gz`
 
->>>
-TARGET='m17swex'  #FOR EXAMPLE
+Make sure you have the following libraries on your IDL path:
 
-%
-setenv TARGET m17swex
+* [IDL astronomy users library](https://github.com/wlandsman/IDLAstro)
+* [IDL coyote library](https://github.com/idl-coyote/coyote)
+* [IDL library bundled with this recipe](https://github.com/mattpovich/sedfitting-phrds)
 
-TARGET-SPECIFIC SETUP
 
-#Link to the IRAC and MIPS mosaics for the target, wherever you've put them...
-ln -s /Users/mspovich/research/M17SWex/mosaics/GLM_01424-058_mosaic_I1.fits $TARGET.mch1.fits
-ln -s /Users/mspovich/research/M17SWex/mosaics/GLM_01424-058_mosaic_I2.fits $TARGET.mch2.fits
-ln -s /Users/mspovich/research/M17SWex/mosaics/GLM_01424-058_mosaic_I3.fits $TARGET.mch3.fits
-ln -s /Users/mspovich/research/M17SWex/mosaics/GLM_01424-058_mosaic_I4.fits $TARGET.mch4.fits
-ln -s /Users/mspovich/research/M17SWex/mosaics/GLM_01424-058_mosaic_24p.fits $TARGET.mm24.fits
-#OR make new ones from the original GLIMPSE/MIPSGAL mosaics, for
-example (nessie):
+## TARGET-SPECIFIC SETUP
 
-% IDL>
-  m = readfits('mosaic_enhanced_mips24_339.0.fits',hd)         
-  xc = 7738 & yc = 1691 & dx = 2352 & dy = 2348                 
-  x0 = xc-dx/2 & x1 = xc+dx/2
-  y0 = yc-dy/2 & y1 = yc+dy/2
-  hextract,im,hd,x0,x1,y0,y1
-  writefits,'nessie_mm24.fits',im,hd   
+**>>>**
 
-#Get regionfile for ACIS field-of-view (fk5 DECIMAL DEGREES) and name it $TARGET.xfov.reg
+    TARGET='m17swex'  # python EXAMPLE. **Choose your own target name.**
+
+
+**%**
+
+    setenv TARGET m17swex  # tcsh EXAMPLE. **Choose your own target name (must match above)**
+
+
+It is a good idea to name your working directory `$TARGET/sedfitter`, e.g. (in `tcsh`):
+
+**%**
+
+    mkdir -p $TARGET/sedfitter  #SKIP if directory exists from previous recipe!
+    cd $TARGET/sedfitter
+    
+[Download](https://irsa.ipac.caltech.edu/data/SPITZER/MIPSGAL/) a **MIPSGAL 24 µm mosaic** covering your target field-of-view and name it `../$TARGET.mm24.fits`.
+
+**Optional.** If you are interested in flagging YSOs found within a specfied "cropped" sub-region of your target catalog, make an `SAOImage ds9` regionfile containing one or more `polygon` regions and save it as `../$TARGET.xfov.reg` (required coordinate format is fk5 DECIMAL DEGREES). I personally use this feature to identify YSOs falling within the *Chandra*/ACIS field-of-view within a larger *Spitzer* mosaic.
 
 ####SED FITTING STARTS HERE####
 
@@ -59,117 +72,13 @@ mkdir sedfitter
 cd sedfitter
 
 
-=============================================================================
-CREATE A TEXT FILE TO CONTAIN NOTES FROM YOUR SED FITTING TO THIS SPECIFIC TARGET. 
-Save as sedfitting_notes.txt
 
 
-=============================================================================
-FIT ALL SOURCES WITH REDDENED STELLAR PHOTOSPHERES
-
-
-## Prepare the fitter datafile from Pat's GLIMPSE+ data structure
-
-  %/IDL>
-  glimpseplusfile = '../glimpse+/Catalog_plus.fits.gz'
-  datafile = 'data_glimpse+'
-  vvv = 0 ;Set to 1 if using VVV catalog instead of UKIDSS
-  select = 1  ;Set to 1 if coordinate box is desired, 0 for all sources set to 0
-  subset = 0
-  .run
-    if select eq 1 then begin  ;eg M17 SWex field - COPY to sedfitting_notes.txt
-      lmin = 13.694
-      lmax = 14.759
-      bmin = -1.0
-      bmax = -0.262
-      subset = [0.5*(lmin+lmax),0.5*(bmin+bmax),lmax-lmin,bmax-bmin]
-    endif
-  end
-  glimpseplus2data,glimpseplusfile,select,datafile,vvv=vvv,subset=subset
-;Copy printed output to sedfitting_notes.txt
-
-  nwav = 10   ;Set to the number of filter bandpasses in DATAFILE
-  if nwav gt 10 then bs = 2 else bs = 0
-  twomass = 0   ; Set to 1 if your JHKs colors are on the 2MASS system
-  if not twomass then mk = 1
-  magfromdata,datafile,0+bs,j,nwav=nwav,mk=mk
-  magfromdata,datafile,1+bs,h,nwav=nwav,mk=mk
-  magfromdata,datafile,2+bs,k,nwav=nwav,mk=mk
-  plot_nircc_rv,j,h,k,twomass=twomass
-
-;Estimate the maximum reddening in Av by comparing the reddening locus of stars to the reddening ;vectors (marked at intervals of Av=5 mag). Note the value that you used.
-
-; Filter out sources with colors consistent with stars, malmquist biases, and other general photometry problems
-
-  maxav = 30. ;DEFAULT for IRDCs. Others should be LESS.
-  data_good = datafile + 'keep'
-  data_bad = datafile + 'toss'
-  malmcullav,datafile,data_good,data_bad,maxav=maxav,nwav=nwav
-
-###Fit all sources with stellar atmospheres.
-
-  >>>
-  python
-from astropy import units as u
-from sedfitter import fit
-from sedfitter.extinction import Extinction
-
-	#python seems to dislike the ~ for home directory character, using ABSOLUTE paths.
-	# Define path to models
-model_dir_kurucz = '/Users/mspovich/research/ysomodels/models_kurucz'
-
-	# Read in extinction law
-extinction = Extinction.from_file('/Users/mspovich/research/ysomodels/ex_law_gl.par', columns=[0, 3], wav_unit=u.micron, chi_unit=u.cm**2 / u.g)
-
-	# Define filters and apertures (this example is for UKIDSS+2MASS+IRAC)
-filters = ['UDSSJ', 'UDSSH', 'UDSSK', '2J', '2H', '2K', 'I1', 'I2', 'I3', 'I4']
-apertures = [2.0, 2.0, 2.0, 3., 3., 3., 3., 3., 3., 3.] * u.arcsec
-
-        #VVV+2MASS+IRAC
-filters = ['VVVZ','VVVY','VVVJ', 'VVVH', 'VVVK', '2J', '2H', '2K', 'I1', 'I2', 'I3', 'I4']
-apertures = [2.0,2.0,2.0, 2.0, 2.0, 3., 3., 3., 3., 3., 3., 3.] * u.arcsec
-
-	# Fit! Note distance_range=[] is required but does nothing
-	with these models! Use the Max Av you determined from the CCD;
-	this can (maybe should) exceed the MAXAV used for MALMCULL AV
-fit('data_glimpse+keep', filters, apertures, model_dir_kurucz, 'stellar_keep.fitinfo', n_data_min=4, extinction_law=extinction, distance_range=[1.5, 2.] * u.kpc, av_range=[0., 50.], output_format=('N',1))
-
-##IMPORTANT! The maxav above is the one from the JHK CCD, and it exceeds the value used for MALMCULLAV. This is OK!
-
-###Split the output into well-fit versus poorly-fit.
-#After some testing, settled on cpd=9. to filter output of stellar
-photosphere fits
-
->>>
-from sedfitter import filter_output
-filter_output('stellar_keep.fitinfo', cpd=9.) 
-
-from sedfitter import write_parameters
-write_parameters('stellar_keep.fitinfo_bad','pars_stellar_bad9.txt')
 
 	 
-% IDL>
-	 fitinfobad9 = 'pars_stellar_bad9.txt'
-	 data_parent='data_glimpse+keep'
-	 fitinfo2data,fitinfobad9,data_parent,'data_glimpse+sb9'
-	 ds9regfromdata,'data_glimpse+sb9','data_glimpse+sb9.reg',color='red'
-	 data_activate,'data_glimpse+sb9','data_glimpse+ysoc',nwav=nwav
-
-;Copy the output of the fitinfo2data command to sedfitting_notes.txt
 
 
-###Let's check the spatial distributions of these sources...
 
-  ds9 ../$TARGET.mch1.fits -region data_glimpse+sb9.reg &
-
-
-###OPTIONAL Plot up some SEDs for sanity checks.
-
-  >>>
-from sedfitter import plot
-plot('stellar_keep.fitinfo_bad', 'plots_sb9')
-
-#It's OK to kill this with Control-C if you don't want to make thousands of plots!
 
 On MacOS, I find I can just page through the large set of *pdf files made in a finder window with the preview pane made large.  
 
