@@ -33,9 +33,9 @@ Make sure you have the following libraries on your IDL path:
 
 ## TARGET-SPECIFIC SETUP
 
->>> `TARGET='m17swex'  # python EXAMPLE. **Choose your own target name.**`
+**>>>** `TARGET='m17swex'  # python EXAMPLE. **Choose your own target name.**`
 
-% `setenv TARGET m17swex  # tcsh EXAMPLE. **Choose your own target name (must match above)**`
+**%** `setenv TARGET m17swex  # tcsh EXAMPLE. **Choose your own target name (must match above)**`
 
 
 It is a good idea to name your working directory `$TARGET/sedfitter`, e.g. (in `tcsh`):
@@ -173,9 +173,7 @@ Write SED fit parameters to a text file (*badly-fit sources only*) and create `d
 
 ### Examine the spatial distributions of the candidate YSOs on an image of the target field.
 
-**%**
-
-    ds9 ../$TARGET.mch1.fits -region data_glimpse+sb9.reg &
+**%** `ds9 ../$TARGET.mch1.fits -region data_glimpse+sb9.reg &`
 
 Candidate YSOs should appear clustered in or near molecular clouds, IR dark clouds, on the rims of bubbles, and/or with known young stellar clusters in the field. If you judge that your YSO candidates dominated by a distributed, likely contaminating population, consider setting `cpd>9.` and rerunning `filter_output`.
 
