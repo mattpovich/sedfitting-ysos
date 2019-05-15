@@ -126,7 +126,7 @@ This set of color cuts, described by [Povich et al. (2011)](https://doi.org/10.1
     from sedfitter.extinction import Extinction
   
     # Read in extinction law
-    extinction = Extinction.from_file('/Users/mspovich/research/ysomodels/ex_law_gl.par', columns=[0, 3], 
+    extinction = Extinction.from_file('ex_law_gl.par', columns=[0, 3], 
         wav_unit=u.micron,    chi_unit=u.cm**2 / u.g)
 
   	 # Define path to models
