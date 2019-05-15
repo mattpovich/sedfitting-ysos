@@ -176,9 +176,9 @@ This combines the best-fit models from all sets into SINGLE parameter tables for
 ## CREATE THE `$TARGET.ised.fits` SUMMARIZING THE SED FITTING RESULTS  
 
 Included steps:
-* FLAG CANDIDATE GALAXIES AND AGN (`galflag_phot.pro`)
-* FLAG CANDIDATE AGB STARS
-* ASSIGN YSO STAGES (`stageflag_r17.pro`)
+* Flag candidate starburst galaxies and AGN background contaminants (`galflag_phot.pro`)
+* Flag candidate dusty AGB star contaminants
+* Assign evolutionary stages to YSOs (`stageflag_r17.pro`)
 
 NOTE: The (OPTIONAL) regionfile *xfov.reg must contain one (or more) non-overlapping polygons in the fk5 decimal degree coordinate system.
 
