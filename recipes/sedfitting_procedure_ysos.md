@@ -4,7 +4,7 @@
 
 ## Description
 
-This recipe guides you through the steps of fitting multiple SED models from [Robitaille (2017)](https://doi.org/10.1051/0004-6361/201425486) to combined *Spitzer*, 2MASS, and UKIDSS (or VVV) candidate YSOs in a specified target field.
+This recipe guides you through the steps of fitting multiple SED models from [Robitaille (2017)](https://doi.org/10.1051/0004-6361/201425486) to combined *Spitzer*, 2MASS, and UKIDSS (or VVV) candidate young stellar objects (YSOs) with mid-infrared excess emission in a specified target field. The data analysis pipeline described here is inteded to be run *after* you have identified a set of candidate YSOs via the `find_ysoc_procedure` (included in this repo) or [`sedfitting_procedure_xpms`](https://github.com/mattpovich/sedfitting-phrds/blob/master/recipes/sedfitting_procedure_xpms.md) pipelines.
 
 This pipeline creates two final science products:
 1. A summary table of the YSOs and SED fit classifications called `<target>.ised.fits`.
@@ -27,14 +27,14 @@ I recommend using two different terminal windows simultaneously, one in `bash` a
 Get Tom Robitaille's sedfitter software and install it following the instructions
 at http://sedfitter.readthedocs.io/en/stable/installation.html
 
-Download the following 6 SED model sets from https://doi.org/10.5281/zenodo.166732 (there are 17 model sets total; these are the only ones used by this pipeline), expane the `*tar.gz` archives and —> prepend the model set number to each directory
+Download the following 6 SED model sets from https://doi.org/10.5281/zenodo.166732 (there are 18 model sets total; these are the only ones used by this pipeline), expand each `*tar.gz` archive, and —> prepend the model set index number to each directory created:
 
-* `sp--s-i.tar.gz —> 01_sp--s-i.tar` 
-* `sp--h-i.tar.gz`
-* `spu-smi.tar.gz`
-* `spu-hmi.tar.gz`
-* `spubsmi.tar.gz`
-* `spubhim.tar.gz`
+* `sp--s-i.tar.gz —> 01_sp--s-i` 
+* `sp--h-i.tar.gz —> 02_sp--h-i`
+* `spu-smi.tar.gz —> 14_spu-smi`
+* `spu-hmi.tar.gz —> 15_spu-hmi`
+* `spubsmi.tar.gz —> 16_spubsmi`
+* `spubhim.tar.gz —> 17_spubhim`
 
 Make sure you have the following libraries on your IDL path:
 
@@ -66,18 +66,22 @@ It is a good idea to name your working directory `$TARGET/sedfitter`, e.g. (in `
 
 **Optional.** If you are interested in flagging YSOs found within a specfied "cropped" sub-region of your target catalog, make an `SAOImage ds9` regionfile containing one or more `polygon` regions and save it as `../$TARGET.xfov.reg` (required coordinate format is fk5 DECIMAL DEGREES). I personally use this feature to identify YSOs falling within the *Chandra*/ACIS field-of-view within a larger *Spitzer* mosaic.
 
-####SED FITTING STARTS HERE####
+## PREPARE SOURCE PHOTOMETRY FOR SED FITTING
 
-mkdir sedfitter
-cd sedfitter
+There are three main ways you may have carved out a set of YSO candidates, so select the option below that matches your situation:
 
+I. *Proceeding from `find_ysoc_procedure`.* YSO candidates were identified from a combined NIR/MIR catalog using my "blind" IR-excess selection criteria for highly-contaminated fields. Congratulations, you already made `data_glimpse+ysoc`, so proceed to **Flag UGOs** below.
 
+II. *Proceeding from [`sedfitting_procedure_xpms`](https://github.com/mattpovich/sedfitting-phrds/blob/master/recipes/sedfitting_procedure_xpms.md).* YSO candidates were identified from a sample of IR counterparts to X-ray sources (or some other indicator of youth, e.g. H-alpha sources and/or a parallax/proper-motion-selected members of a young stellar cluster). In this case, your `$TARGET/sedfitter` directory should already contain two files, `xpms.fitinfo_bad` and `data_xir`. Use the following IDL command to create the new fitter data file:
 
+**IDL>**
 
+    parfile_bad = 'pars_xpms_bad.txt' 
+    data_parent='data_xir'
+    fitinfo2data,parfile_bad,data_parent,'data_glimpse+ysoc'
 
+III. *Using your own custom set of YSO candidates.* If you already have a list of candidate YSOs that you know are mid-IR excess sources (from a previous color selection, for example) you can create your own `data_glimpse+ysoc` file conforming to the criteria described under **PREPARE SOURCE PHOTOMETRY FOR SED FITTING** in `find_ysoc_procedure` and skip the subsequent filtering steps in that recipe.
 	 
-
-
 
 
 On MacOS, I find I can just page through the large set of *pdf files made in a finder window with the preview pane made large.  
