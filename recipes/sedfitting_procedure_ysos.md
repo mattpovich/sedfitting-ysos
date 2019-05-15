@@ -54,13 +54,14 @@ Make sure you have the following libraries on your IDL path:
 
     setenv TARGET m17swex  # tcsh EXAMPLE. **Choose your own target name (must match above)**
 
-
 It is a good idea to name your working directory `$TARGET/sedfitter`, e.g. (in `tcsh`):
 
 **%**
 
     mkdir -p $TARGET/sedfitter  #SKIP if directory exists from previous recipe!
     cd $TARGET/sedfitter
+    
+**Critical!** Copy the modules `new_filt.py` and `fit_multi.py` from the `python` subdirectory of this library into your `sedfitter` working directory.    
     
 [Download](https://irsa.ipac.caltech.edu/data/SPITZER/MIPSGAL/) a **MIPSGAL 24 µm mosaic** covering your target field-of-view and name it `../$TARGET.mm24.fits`.
 
@@ -82,18 +83,17 @@ II. *Proceeding from [`sedfitting_procedure_xpms`](https://github.com/mattpovich
 
 III. *Using your own custom set of YSO candidates.* If you already have a list of candidate YSOs that you know are mid-IR excess sources (from a previous color selection, for example) you can create your own `data_glimpse+ysoc` file conforming to the criteria described under **PREPARE SOURCE PHOTOMETRY FOR SED FITTING** in `find_ysoc_procedure` and skip the subsequent filtering steps in that recipe.
 	 
+## Flag "unresolved green objects" (UGOs)
+Reset 4.5 µm fluxes to upper limits for suspected excess sources based on MIR colors (unresolved molecular outflow candidates; see [Povich et al. 2013](https://doi.org/10.1088/0067-0049/209/2/31)).
 
+**IDL>**
+        
+	nwav = 10    ;set to 12 if ZY photometry is included in data_glimpse+ysoc
+	ugoflag,'data_glimpse+ysoc','data_glimpse+ysoc_ugos',nwav=nwav,/regions		
 
-On MacOS, I find I can just page through the large set of *pdf files made in a finder window with the preview pane made large.  
+## Perform aperture photometry on the MIPS 24 µm mosaic at each YSO position
 
-Reset 4.5 um fluxes to upper limits for suspected excess sources (outflow candidates; Povich et al. 2011)
-
-  %
-  IDL>
-        ugoflag,'data_glimpse+ysoc','data_glimpse+ysoc_ugos',nwav=nwav,/regions		
----------------------
-Get MIPSGAL 24 um photometry for strong IRE sources. Using MUCH LESS aggressive error resetting than previously to avoid overly downweighting 24 um compared to NIR+IRAC datapoints.
-NOTE: It is a good idea to review the header of the MIPS mosaic to check if information is available for mean exposure time and zodaical background subtraction, otherwise just use the default keyword values.
+It is a good idea to review the header of the MIPS mosaic to check if information is available for mean exposure time and zodaical background subtraction, otherwise just use the default keyword values.
 
    IDL>
 	.r mipsfitapphot
