@@ -10,6 +10,6 @@ These pipelines have been tested on `python 3.6` and `3.7` with no adverse effec
 
 ## Getting started 
 
-1. *If you need to identify a set of candidate YSOs* in a region of the sky surveyed by Spitzer/WISE, 2MASS and (optionally) UKIRT/VVV: See the step-by-step instructions and explanations included with this package in `recipes/find_ysoc_procedure.md`. 
-1. *If you already have a list of candidate YSOs to classify*: See `recipes/sedfitting_procedure_ysos.md`. (This is the option to use if you have already completed the `sedfitting_procedure_xpms` pipeline from the companion [sedfitting-phrds](https://github.com/mattpovich/sedfitting-phrds) repo.
+* *If you need to identify a set of candidate YSOs* in a region of the sky surveyed by Spitzer/WISE, 2MASS and (optionally) UKIRT/VVV, see the step-by-step instructions and explanations included with this package in `recipes/find_ysoc_procedure.md`. 
+* *If you already have a list of candidate YSOs to classify*, see `recipes/sedfitting_procedure_ysos.md`. (This is the option to use if you have already completed the `sedfitting_procedure_xpms` pipeline from the companion [sedfitting-phrds](https://github.com/mattpovich/sedfitting-phrds) repo.
  
