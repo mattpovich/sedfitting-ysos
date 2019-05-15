@@ -30,14 +30,12 @@ Make sure you have the following libraries on your IDL path:
 * [IDL coyote library](https://github.com/idl-coyote/coyote)
 * [IDL library bundled with this recipe](https://github.com/mattpovich/sedfitting-phrds)
 
-**>>>**
 
-    TARGET='m17swex'  # python EXAMPLE. **Choose your own target name.**
+## TARGET-SPECIFIC SETUP
 
+>>> `TARGET='m17swex'  # python EXAMPLE. **Choose your own target name.**`
 
-**%**
-
-    setenv TARGET m17swex  # tcsh EXAMPLE. **Choose your own target name (must match above)**
+% `setenv TARGET m17swex  # tcsh EXAMPLE. **Choose your own target name (must match above)**`
 
 
 It is a good idea to name your working directory `$TARGET/sedfitter`, e.g. (in `tcsh`):
@@ -46,6 +44,8 @@ It is a good idea to name your working directory `$TARGET/sedfitter`, e.g. (in `
 
     mkdir -p $TARGET/sedfitter
     cd $TARGET/sedfitter
+    
+**Recommended** Download *Spitzer*/IRAC mosaics of your target field and place them in the $TARGET directory, with filenames `../$TARGET.mch[1234].fits` for bands `[3.6], [4.5], [5.8], [8.0]`. GLIMPSE mosaic images can be obtained from the NASA/IPAC Infrared Science Archive at https://irsa.ipac.caltech.edu/data/SPITZER/GLIMPSE/.
     
 ## PREPARE SOURCE PHOTOMETRY FOR SED FITTING
 
@@ -144,7 +144,7 @@ Note these filter names are *specific* to the pre-convolved model SEDs and must 
 **>>>** 
 
     fit('data_glimpse+keep', filters, apertures, model_dir_kurucz, 'stellar_keep.fitinfo', n_data_min=4, 
-	extinction_law=extinction, distance_range=[1.5, 2.] * u.kpc, av_range=[0., 50.], output_format=('N',1))
+    	extinction_law=extinction, distance_range=[1.5, 2.] * u.kpc, av_range=[0., 50.], output_format=('N',1))
 		
 Split the output into well-fit versus poorly-fit. After much testing, I recommend using `cpd=9.` as the cutoff for well-fit models from the `models_kurucz` set applied to this set of broadband photometry used in `glimpse_data+keep`.
 		
