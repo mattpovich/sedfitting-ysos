@@ -27,7 +27,7 @@ I recommend using two different terminal windows simultaneously, one in `bash` a
 Get Tom Robitaille's sedfitter software and install it following the instructions
 at http://sedfitter.readthedocs.io/en/stable/installation.html
 
-Download the following 6 SED model sets from https://doi.org/10.5281/zenodo.166732 (there are 18 model sets total; these are the only ones used by this pipeline), expand each `*tar.gz` archive, and —> prepend the model set index number to each directory created:
+Create a directory (I call mine `ysomodels`) to hold all the model set subdirectories (note: if you've already downloaded model sets previously, for example in conjunction with one of my other recipes, it's a good idea to keep all the models in this same directory). Download the following 6 SED model sets from https://doi.org/10.5281/zenodo.166732 (there are 18 model sets total; these are the only ones used by this pipeline), expand each `*tar.gz` archive, and —> prepend the model set index number to each directory created:
 
 * `sp--s-i.tar.gz —> 01_sp--s-i` 
 * `sp--h-i.tar.gz —> 02_sp--h-i`
@@ -35,6 +35,8 @@ Download the following 6 SED model sets from https://doi.org/10.5281/zenodo.1667
 * `spu-hmi.tar.gz —> 15_spu-hmi`
 * `spubsmi.tar.gz —> 16_spubsmi`
 * `spubhim.tar.gz —> 17_spubhim`
+
+Copy the module `new_filt.py` from the `python` subdirectory of this library into the directory containing all of the above yso model subdirectories. The R17 models do not come pre-convolved with UKIDSS and VVV filter profiles. You can download the SVO filter profiles from http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php and colve multiple filters with R17 models in one shot using `new_filt.py,` which is a simple wrapper for `convolve_model_dir`. See https://sedfitter.readthedocs.io/en/stable/convolution.html for details.
 
 Make sure you have the following libraries on your IDL path:
 
@@ -61,7 +63,7 @@ It is a good idea to name your working directory `$TARGET/sedfitter`, e.g. (in `
     mkdir -p $TARGET/sedfitter  #SKIP if directory exists from previous recipe!
     cd $TARGET/sedfitter
     
-**Critical!** Copy the modules `new_filt.py` and `fit_multi.py` from the `python` subdirectory of this library into your `sedfitter` working directory.    
+**Critical!** Copy the module `fit_multi.py` from the `python` subdirectory of this library into your `sedfitter` working directory.    
     
 [Download](https://irsa.ipac.caltech.edu/data/SPITZER/MIPSGAL/) a **MIPSGAL 24 µm mosaic** covering your target field-of-view and name it `../$TARGET.mm24.fits`.
 
@@ -93,42 +95,34 @@ Reset 4.5 µm fluxes to upper limits for suspected excess sources based on MIR c
 
 ## Perform aperture photometry on the MIPS 24 µm mosaic at each YSO position
 
-It is a good idea to review the header of the MIPS mosaic to check if information is available for mean exposure time and zodaical background subtraction, otherwise just use the default keyword values.
+I developed this pipeline back when no point-source catalog existed from MIPSGAL. Users of this pipeline may prefer to use the 24 µm catalog published by [Gutermuth & Heyer (2015)](https://doi.org/10.1088/0004-6256/149/2/64), which includes matches to GLIMPSE sources. *This is fine, but if you choose to go this route you are responsible for adding the 24 µm data to glimpse+ysoc_ugos_24um.*
+In my experience, the majority of YSO candidates identifiable with IRAC lack firm detections at 24 µm, and the aperture photometry procedure below estimates useful upper limits for these sources.
 
-   IDL>
-	.r mipsfitapphot
-	 spawn,'echo $TARGET', target
- 	 mipsmosaic='../'+target+'.mm24.fits'  ;This is your MIPS 24 um mosaic covering the field of view.
-  	 data_in='data_glimpse+ysoc_ugos'
-  	 data_out='data_glimpse+ysoc_ugos_24um'
-  	 photlist='mipsmerger.txt'
-  	 regfile='mipsmerger_apertures.reg'
-	 snlim = 5. ;Other values are possible, experiment if desired
-	 mfe = 0.10 ;Recommend NOT going lower than this.
- 	 mipsfitapphot,mipsmosaic,data_in,data_out,photlist,apreg=regfile,aprad=3.5,anrad=7.,snlim=snlim,min_frac_errs=mfe,nwav=nwav
+**IDL>**
 
-OPTIONAL: Review the extraction results, iterate the above with modified values of aprad, anrad, or snlim:
+    .r mipsfitapphot
+    spawn,'echo $TARGET', target
+    mipsmosaic='../'+target+'.mm24.fits'  ;This is your MIPS 24 um mosaic covering the field of view.
+    data_in='data_glimpse+ysoc_ugos'
+    data_out='data_glimpse+ysoc_ugos_24um'
+    photlist='mipsmerger.txt'
+    regfile='mipsmerger_apertures.reg'
+    snlim = 5. ;Other values are possible, experiment if desired
+    mfe = 0.10 ;Recommend NOT going lower than this.
+    mipsfitapphot,mipsmosaic,data_in,data_out,photlist,apreg=regfile,aprad=3.5,anrad=7.,snlim=snlim,min_frac_errs=mfe,nwav=nwav
 
-  ds9 ../$TARGET.mm24.fits -region mipsmerger_ysoc_apertures.reg &
+OPTIONAL. Visually review the extraction results on the 24 µm image. 
 
-#OPTIONAL: If another iteration is desired, archive previous as, e.g.:
-   mkdir mipsphot_sn7
-   cp mipsmerger* mipsphot_sn7
+**%** `ds9 ../$TARGET.mm24.fits -region mipsmerger_ysoc_apertures.reg &`
 
-I'm sticking with min S/N = 5 (it's never gonna be perfect).
+If desired, iterate the above with modified values of aprad (aperture radius in arcsecond), anrad (annular background inner radius, in arcsec), or snlim (minimum S/N for a detection).
+
+
+
 
 ---------------------------------
 Fit the YSO candidates list with R17 YSO model sets.
 
-## NOTE: The R17 models do not come pre-convolved with UKIDSS and VVV filter
-   profiles. You can download the SVO filter profiles from
-   http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php
-   and colve multiple filters with R17 models in one shot
-   using new_filt.py.
-
-   I recommend placing new_filt.py in your top models directory
-   and fit_multi.py
-   in your sedfitter working directory.
 
 >>>
 
