@@ -10,40 +10,61 @@
 ;
 ;The columns of the saved table ised are as follows:
 ;(1)  MIR_NAME           = (A30) Source designation from Spitzer catalog.
-;(2)  RADEG              = (D9.5) Right ascension of Spitzer source (J2000 deg)
-;(3)  DEDEG              = (D9.5) Declination of Spitzer source (J2000 deg)
+;(2)  RA              = (D9.5) Right ascension of Spitzer source (J2000 deg)
+;(3)  DEC              = (D9.5) Declination of Spitzer source (J2000 deg)
 ;(4)  IRMAG              = NBAND(F5.2) Vector of NIR+MIR mags used in the SED fitting (NaN=non-detection)
 ;(5)  IRMAG_ERR          = NBAND(F6.2) Uncertainties on IRMAG (NaN=non-detection, -99.99=upper limit used in fitting). 
 ;(X)  NIRPHOT_CAT        = 3(I2) Provenance of each JHK mag (0 = 2MASS, 1 = UKIDSS, -1 = none) DEPRECATED!
 ;(X)  NIRPHOT_NUM_SM     = (I1) Number of UKIDSS secondary matches to Spitzer catalog source. DEPRECATED!
-;(6)  SED_FLG            = (I1) 0 = likely YSO, 1 = candidate galaxy/PAH, 2 = candidate AGN, (NEW) 3 = candidate AGB star
+;(6)  SED_FLAG            = (I1) [-2] PMS models (no IRE), [-1] PMS
+;models (marginal IRE), 0 = likely YSO, 1 = candidate galaxy/PAH, 2 = candidate AGN, (NEW) 3 = candidate AGB star
 ;(7)  SED_CHISQ_NORM     = (F6.3) Normalized chi-squared for best-fit model 
 ;(8) SED_AV             = (F7.2) Visual extinction (mag) to source from SED fits.
 ;(9) SED_AV_ERR          = (F7.2) Uncertainty on SED_AV (mag).
-;(10) SED_STAGE          = (I2) 1 = Stage 0/I protostar, 2 = Stage II/III T Tauri star, -1 = ambiguous
+;(10) SED_STAGE          = (I2) 1 = Stage I (envelopes), 2 = Stage II
+;(disks), -1 = ambiguous (I/II), [3] = Stage III (no MIR excess, PMS models)
 ;(XX) PROB_DENS          = (F5.3) Probability that source is a member
 ;based on local source density. DEPRECATED!
 
-pro create_ised_r17,target_dir=target_dir,sourcelist=sourcelist,xfov=xfov
+pro create_ised_r17,target_ysoc=target_ysoc,sourcelist_ysoc=sourcelist_ysoc,xfov=xfov, target_xpms=target_xpms, sourcelist_xpms=sourcelist_xpms,fk5=fk5
+
+;KEYWORD PARAMETERS
+;    TARGET_YSOC =     - 'string': Path to directory containing IDL save files with fitting results from R17 YSO models. DEFAULT = 'results_ysoc'
+;    TARGET_XPMS =     - 'string': Optional path to directory (e.g. 'results_xpms' containing IDL save files with fitting results from PMS models.
+;    SOURCELIST_YSOC = - 'string': Path to file within TARGET_YSOC that contains list of save file names to process. DEFAULT = 'sourcelist.txt'
+;    SOURCELIST_XPMS = - 'string': Path to file within TARGET_XPMS that contains list of save file names to process. DEFAULT = 'sourcelist.txt' (unused if TARGET_XPMS is not specified).
+
 
 ;CALLS
-;    GALFLAG, STAGEFLAG_R17, DS9_POLYGONVERTICES
+;    GALFLAG, STAGEFLAG_R17, DS9_POLYGONVERTICES, MAKEREG_XY
 ;
 ;FILES CREATED
 ;    ised.sav, su_cat_yso_final_galflag.reg, su_cat_yso_final_stageflag.reg
 ;
 ;VERSION HISTORY
 ;  Adapted from CREATE_ISED
-;  PRODUCTION (v1.0)  6 May 2019   M. S. Povich
-
+;  PRODUCTION (v1.0) - 6 May 2019   M. S. Povich
+;               v1.1 -  16 May 2019 M. S. Povich
+;    Added target_xpms=, sourcelist_xmps keyword functionality to
+;    combine SCIM-X and MIRES catalog information into a single table.
+;    Defined SED_FLAG < 0 and SED_STAGE = 3 for sources fith with PMS models.
+;    Added /FK5 switch in case input coordinates are celesial, not Galactic.
   
-  if not keyword_set(target_dir) then target_dir = 'results_ysoc'
+  if not keyword_set(target_ysoc) then target_ysoc = 'results_ysoc'
 
-  if not keyword_set(sourcelist) then sourcelist = 'sourcelist.txt'
-  readcol,target_dir + '/' + sourcelist,format='(A)',names
-  files = target_dir + '/' + names
-  nsrc = n_elements(files)
+  if not keyword_set(sourcelist_ysoc) then sourcelist_ysoc = 'sourcelist.txt'
+  readcol,target_ysoc + '/' + sourcelist_ysoc,format='(A)',names
+  files = target_ysoc + '/' + names
+  n_src = n_elements(files)
 
+  if keyword_set(target_xpms) then begin
+     if not keyword_set(sourcelist_xpms) then sourcelist_xpms = 'sourcelist.txt'
+     readcol,target_xpms + '/' + sourcelist_xpms,format='(A)',names2
+     files = [files,target_xpms + '/' + names2]
+     n_yso = n_src
+     n_src = n_elements(files) 
+  endif 
+  
 ;Initialization for photometry variables
   restore,files[0]  ;JUST to get the number of filters right!
   nband = n_elements(s.valid)
@@ -71,12 +92,12 @@ pro create_ised_r17,target_dir=target_dir,sourcelist=sourcelist,xfov=xfov
   if not keyword_set(xfov) then begin
      template_row = {$
                  MIR_NAME      :''   ,$
-                 RADEG         :d_nan,$
-                 DEDEG         :d_nan,$
+                 RA         :d_nan,$
+                 DEC         :d_nan,$
                  IRMAG         :replicate(f_nan,nband),$
                  IRMAG_ERR     :replicate(f_nan,nband),$
 ;                 NIRPHOT_CAT   :replicate(-1,3),   $
-                 SED_FLG       :-1   ,$
+                 SED_FLAG       :-1   ,$
                  SED_CHISQ_NORM:f_nan,$
                  SED_AV        :f_nan,$
                  SED_AV_ERR    :f_nan,$
@@ -85,12 +106,12 @@ pro create_ised_r17,target_dir=target_dir,sourcelist=sourcelist,xfov=xfov
   endif else begin
      template_row = {$
                  MIR_NAME      :''   ,$
-                 RADEG         :d_nan,$
-                 DEDEG         :d_nan,$
+                 RA         :d_nan,$
+                 DEC         :d_nan,$
                  IRMAG         :replicate(f_nan,nband),$
                  IRMAG_ERR     :replicate(f_nan,nband),$
 ;                 NIRPHOT_CAT   :replicate(-1,3),   $
-                 SED_FLG       :-1   ,$
+                 SED_FLAG       :-1   ,$
                  SED_CHISQ_NORM:f_nan,$
                  SED_AV        :f_nan,$
                  SED_AV_ERR    :f_nan,$
@@ -100,20 +121,25 @@ pro create_ised_r17,target_dir=target_dir,sourcelist=sourcelist,xfov=xfov
   endelse 
 
 ;  template_row = null_structure(template_row)
-  iSED = replicate(template_row, nsrc)
+  iSED = replicate(template_row, n_src)
 
-  for i=0L,nsrc-1 do begin   ;Populate info source-by-source
+  for i=0L,n_src-1 do begin   ;Populate info source-by-source
      
      restore,files[i]
 
      desig = strtrim(s.desig,2)
-     MIR_NAME = desig   ;ASSUMING this is in a correct format! But it's just a name...
+     MIR_NAME = desig   ;ASSUMING this is in a correct naming convention! But it's just a string, so shouldn't crash anything.
 
      iSED[i].MIR_NAME = MIR_NAME
 
-     euler,s.l,s.b,RADEG,DEDEG,2    ;ASSUMES S.l and S.b are Galactic coords
-     iSED[i].RADEG = RADEG
-     iSED[i].DEDEG = DEDEG
+     if not keyword_set(fk5) then begin
+        euler,s.l,s.b,RA,DEC,2  ;ASSUMES S.l and S.b are Galactic coords
+        iSED[i].RA = RA
+        iSED[i].DEC = DEC
+     endif else begin
+        iSED[i].RA = s.l
+        iSED[i].DEC = s.b
+     endelse 
 
      ;Convert fluxes to magnitudes and populate photometry arrays
      bands_fit = where(s.valid ne 0,nfit)
@@ -138,29 +164,42 @@ pro create_ised_r17,target_dir=target_dir,sourcelist=sourcelist,xfov=xfov
 
                                 ;Flag possible starburst galaxies and AGN
   mags = transpose(iSED.IRMAG[nband-5:nband-2,*]) ;IRAC mags only
-  galflag_phot,mags,iSED.SED_AV,SED_FLG,regionfile='ised_galflag.reg', $
-               ra=iSED.RADEG,dec=iSED.DEDEG
-  iSED.SED_FLG   = SED_FLG
+  galflag_phot,mags,iSED.SED_AV,SED_FLAG,regionfile='ised_sedflag.reg', $
+               ra=iSED.RA,dec=iSED.DEC
+  iSED.SED_FLAG   = SED_FLAG 
+  if keyword_set(target_xpms) then begin
+     ind_stellar = where(SED_FLAG eq 0,n_stellar)
+     ind_pms = ind_stellar[where(ind_stellar ge n_yso,n_pms)]
+     if n_pms ne 0 then begin
+        iSED[n_yso:*].SED_FLAG = SED_FLAG[ind_pms]
+     endif 
+  endif
 
                                 ;Flag possible AGB stars
   ind_agb = where(ised.irmag[nband-2] - ised.irmag[nband-1] lt 2.2,nagb,complement=ind_notagb)
-  iSED[ind_agb].SED_FLG = 3
+  iSED[ind_agb].SED_FLAG = 3
   print,nagb,' candidate AGB stars'
-  makereg_xy,iSED[ind_agb].radeg,iSED[ind_agb].dedeg,'ised_agbflag.reg',point='cross',color='green',size=9
+  makereg_xy,iSED[ind_agb].radeg,iSED[ind_agb].dedeg,'ised_sedflag.reg',point='cross',color='green',size=9,/append
 
   ;Classify stages
-  stageflag_r17,target_dir,SED_STAGE,ambiguous=0.67,regionfile='ised_stageflag.reg'
-  iSED.SED_STAGE = SED_STAGE
+  stageflag_r17,target_ysoc,SED_STAGE,ambiguous=0.67,regionfile='ised_stageflag.reg',sourcelist=sourcelist_ysoc,fk5=keyword_set(fk5)
+  if not keyword_set(target_xpms) then $
+     iSED.SED_STAGE = SED_STAGE $
+  else begin
+     iSED[0:n_yso-1].SED_STAGE = SED_STAGE
+     iSED[n_yso:*].SED_STAGE = 3
+     makereg_xy, iSED[n_yso:*].RA, iSED[n_yso:*].DEC, 'ised_stageflag.reg',color='dodgerblue',/append
+  endelse 
 
                                 ;Flag YSO candidates within ACIS FOV (OPTIONAL!)
-  ;CURRENTLY BUGGY, picky about input file!
+  ;CURRENTLY picky about input file! Buggy?
   if keyword_set(xfov) then begin
      choose = 1
      n_poly = 1
      while choose le n_poly do begin
         ds9_polygonvertices,xfov,polygon_x,polygon_y,choose=choose,n_poly=n_poly
         o_poly=obj_new('IDLanROI', polygon_x, polygon_y)
-        ind_xfov = where((o_poly->ContainsPoints(iSED.RADEG, iSED.DEDEG) EQ 1), num_in,NCOMPLEMENT=num_trimmed)
+        ind_xfov = where((o_poly->ContainsPoints(iSED.RA, iSED.DEC) EQ 1), num_in,NCOMPLEMENT=num_trimmed)
         print,num_in,' iSED sources fell inside X-ray FOV polygon '+strtrim(choose,2)+'/'+strtrim(n_poly,2)
         iSED[ind_xfov].XFOV = 1
         choose++
@@ -168,7 +207,7 @@ pro create_ised_r17,target_dir=target_dir,sourcelist=sourcelist,xfov=xfov
   endif 
 
   ;Sort by R.A. and save
-  rasrt = sort(iSED.RADEG)
+  rasrt = sort(iSED.RA)
   iSED = iSED[rasrt]
   
 ;  save,iSED,file='ised_r17.sav',/verbose

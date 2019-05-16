@@ -85,7 +85,7 @@ def fit_multiyso(data, filter_names, apertures, models_topdir, n_data_min=3,
     #Write out parameters of WELL-FIT models from each set 
     #for subsequent cross-set analysis
     cpdstr = '{:02.0f}'.format(cpd)
-    print("Writing ASCII parameter files pars_*g4.txt")
+    print("Writing ASCII parameter files pars_*g"+cpdstr+".txt")
     write_parameters('01_sp--s-i.fitinfo_good','pars_01g'+cpdstr+'.txt',
                      select_format=('A',-1)) 
     write_parameters('02_sp--h-i.fitinfo_good','pars_02g'+cpdstr+'.txt',

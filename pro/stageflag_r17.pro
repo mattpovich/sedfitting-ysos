@@ -1,7 +1,7 @@
 ;Flag candidate YSOs according to most probable SED stage: 1 = Stage
 ;0/I, 2 = Stage II/III, -1 = ambiguous
 
-pro stageflag_r17, target_dir, stageflags, sourcelist=sourcelist, regionfile=regionfile, ambiguous=ambiguous
+pro stageflag_r17, target_dir, stageflags, sourcelist=sourcelist, regionfile=regionfile, ambiguous=ambiguous, fk5=fk5
 
 ;INPUT
 ;      TARGET_DIR        'string' --  Directory containing IDL save files of
@@ -24,6 +24,10 @@ pro stageflag_r17, target_dir, stageflags, sourcelist=sourcelist, regionfile=reg
 ;     AMBIGUOUS=     FLOAT -- Probability (must be > 0.5) below which
 ;                             the Stage is considered ambiguous
 ;                             (DEFAULT = 0.67).
+;     /FK5           SWITCH -- Set if the coordinates for the SED
+;                              fitting results are celestial (default
+;                              is Galactic). ONLY used in conjunction
+;                              with REGIONFILE.
 
 ;CALLS
 ;
@@ -61,6 +65,7 @@ endif
   if keyword_set(regionfile) then begin
      colorkey = ['goldenrod','red','yellow']
      groupkey = ['ambiguous','Stage 0/I','Stage II']
+     if keyword_set(fk5) then coordkey = 'fk5' else coordkey = 'galactic'
      openw,u,regionfile,/get_lun
   endif
 
@@ -104,7 +109,7 @@ endif
      if peak gt ambiguous then stageflags[i] = stage_mostprob + 1
 
      if keyword_set(regionfile) then $
-        printf,u,'galactic;circle('+strtrim(s.l,2)+','+strtrim(s.b,2)+ $
+        printf,u,coordkey+';circle('+strtrim(s.l,2)+','+strtrim(s.b,2)+ $
                ',6.5") # color='+colorkey[stageflags[i]]+' tag={'+groupkey[stageflags[i]]+'}'
   endfor 
  
