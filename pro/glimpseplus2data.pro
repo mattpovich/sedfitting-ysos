@@ -14,7 +14,9 @@ pro glimpseplus2data, glimpseplusfile, subset_type, data_out, subset=subset, sat
 ;                                   DATA_OUT. Choices are:
 ;                0: Output all sources.
 ;                1: Perform cut using a specified coordinate box.
-;                2: Select sources from list of designations.
+;                2: Select sources from a list of designations.
+;                3: Select only sources flagged in a specified column 
+;                DEFAULT: SUBSET = 'ACISNAME'
 ;
 ;OUTPUT
 ;       DATA_OUT        'string' -- Path to output fitter datafile to
@@ -65,8 +67,8 @@ endif
 ;Determine subset for output
   case subset_type of
      0: begin                   ; Output ALL sources (SUBSET_TYPE = 0)
-        whrsub = lindgen(nsrc)
-        nsub = nsrc
+        ind_sub = lindgen(nsrc)
+        n_sub = nsrc
      end 
 
      1: begin                   ; Output sources in specified coordinate box (SUBSET_TYPE = 1)
@@ -87,12 +89,12 @@ endif
            print,'WARNING: No sources found in longitude cut. RETURNING'
            return
         endif 
-        whrb = where(guv[whrl].Glat ge bminmax[0] and guv[whrl].Glat le bminmax[1],nsub)
-        if nsub eq 0 then begin
+        whrb = where(guv[whrl].Glat ge bminmax[0] and guv[whrl].Glat le bminmax[1],n_sub)
+        if n_sub eq 0 then begin
            print,'WARNING: No sources found in latitude cut! RETURNING'
            return
         endif 
-        whrsub = whrl[whrb]
+        ind_sub = whrl[whrb]
      end
 
      2: begin                   ; Output sources from designation list (SUBSET_TYPE = 2)
@@ -128,18 +130,36 @@ endif
            whri = where(desigtr eq linestr[i])
            keep(i) = whri
         endfor
-        whrkeep = where(keep ne -1,nsub)
-        if nsub eq 0 then begin
+        whrkeep = where(keep ne -1,n_sub)
+        if n_sub eq 0 then begin
            print,'WARNING: No sources found from '+subset+'! RETURNING.'
            return
         endif 
-        whrsub = keep[whrkeep]
-        ;sort in order of increasing l
-        lsub = guv[whrsub].Glon
-        lsort = sort(lsub)
-        whrsub = whrsub[lsort]
+        ind_sub = keep[whrkeep]
      end
 
+     3: begin
+        if not keyword_set(subset) then subset = 'ACISNAME'
+        if tag_exist(guv,subset,index=col_sub) then begin
+           case 1 of
+              isa(guv.(col_sub),/string): $
+                 ind_sub = where(strtrim(guv.(col_sub),2) ne '',n_sub)
+              isa(guv.(col_sub),/integer): $
+                 ind_sub = where(guv.(col_ind) ne 0,n_sub)
+              isa(guv.(col_sub),/float): $
+                 ind_sub = where(guv.(col_ind) ne !Values.F_NaN,n_sub)
+              else: n_sub = 0
+           endcase 
+           if n_sub eq 0 then begin
+              print,'WARNING: No sources found with information in '+subset+' column! RETURNING.'
+              return
+           endif 
+        endif else begin
+           print,'WARNING: Column name '+subset+' does not exist in catalog table! RETURNING.'
+           return
+        endelse 
+     end
+     
      else: begin
         print, 'SUBSET_TYPE must have value of 0, 1, or 2. RETURNING'
         return
@@ -147,7 +167,13 @@ endif
   endcase
 
 ;Locate sources in subset
-  guv = guv[whrsub]
+
+   ;sort in order of increasing l
+  lsub = guv[ind_sub].Glon
+  lsort = sort(lsub)
+  ind_sub = ind_sub[lsort]
+
+  guv = guv[ind_sub]
   f = [ [guv.F_J_], [guv.F_H_], [guv.F_KS_], $
       [guv.F_3_6_], [guv.F_4_5_], [guv.F_5_8_], [guv.F_8_0_]]
   df = [ [guv.e_F_J_], [guv.e_F_H_], [guv.e_F_KS_], $
@@ -163,17 +189,17 @@ endif
 
 ;New arrays to hold UKIDSS/VVV fluxes  
   f_nan = !VALUES.f_nan
-  f_uvk = replicate(f_nan,nsub)
-  df_uvk = replicate(f_nan,nsub)
-  f_uvh = replicate(f_nan,nsub)
-  df_uvh = replicate(f_nan,nsub)
-  f_uvj = replicate(f_nan,nsub)
-  df_uvj = replicate(f_nan,nsub)
+  f_uvk = replicate(f_nan,n_sub)
+  df_uvk = replicate(f_nan,n_sub)
+  f_uvh = replicate(f_nan,n_sub)
+  df_uvh = replicate(f_nan,n_sub)
+  f_uvj = replicate(f_nan,n_sub)
+  df_uvj = replicate(f_nan,n_sub)
   if keyword_set(vvv) then begin
-     f_vz = replicate(f_nan,nsub)
-     df_vz = replicate(f_nan,nsub)
-     f_vy = replicate(f_nan,nsub)
-     df_vy = replicate(f_nan,nsub)
+     f_vz = replicate(f_nan,n_sub)
+     df_vz = replicate(f_nan,n_sub)
+     f_vy = replicate(f_nan,n_sub)
+     df_vy = replicate(f_nan,n_sub)
   endif 
   
 ; WHERE A HIGH-QUALITY UKIDSS/VVV MAG IS AVAILABLE, Calculate its FLUX in mJy
@@ -231,13 +257,13 @@ endif
      
 ;Expand flux and flag arrays, populate with UKIDSS fluxes.
   if keyword_set(vvv) then n_band = 12 else n_band = 10
-  fexpand = fltarr(nsub,n_band)
+  fexpand = fltarr(n_sub,n_band)
   fexpand[*,n_band-7:n_band-1] = f
   f = temporary(fexpand)
-  dfexpand = fltarr(nsub,n_band)
+  dfexpand = fltarr(n_sub,n_band)
   dfexpand[*,n_band-7:n_band-1] = df
   df = temporary(dfexpand)
-  keysexpand = intarr(nsub,n_band)
+  keysexpand = intarr(n_sub,n_band)
   keysexpand[*,n_band-7:n_band-1] = keys
   keys = temporary(keysexpand)
 
@@ -268,7 +294,7 @@ endif
      
 ;Write output datafile
   openw,u,data_out,/get_lun
-  for i=0L,nsub-1 do $
+  for i=0L,n_sub-1 do $
      if keyword_set(vvv) then $
         printf,u,$
                format='(A25,A5,2(1X,F9.5),12(1X,I1),24(1X,E11.4))' $
@@ -288,7 +314,7 @@ endif
   close,u
   free_lun,u
   
-  print,'Wrote ',strtrim(nsub,2),' sources to file ',data_out, $
+  print,'Wrote ',strtrim(n_sub,2),' sources to file ',data_out, $
         ' from ',strtrim(nsrc,2),' in catalog.'
 
 end

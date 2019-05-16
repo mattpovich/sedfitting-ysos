@@ -33,7 +33,7 @@ endif
   xthick = 2
   ythick = 2
   charthick = 2
-  charsize = 1.4
+  charsize = 1.6
   thick = 2
   if not keyword_set(xr) then xr = [-0.5,max(h-k)]
   
@@ -42,7 +42,7 @@ endif
      cgplot,h-k,j-h,ps=1,symsize=0.6,xr=xr,yr=yr,/xsty,/ysty $
             ,xtitle=xtit,ytitle='J - H (mag)' $
             ,xthick=xthick, ythick=ythick,charsize=charsize,th=thick,charth=charthick,/iso $
-            ,nodata=keyword_set(axes)
+            ,nodata=keyword_set(axes),/window
   endif
    
   if not keyword_set(axes) then begin
@@ -96,23 +96,23 @@ endif
 
    ;Overplot loci and reddening vectors
       if not keyword_set(twomass) then begin
-         cgoplot,H_KG,J_HG,linesty=0,color='orange',th=thick
-         cgoplot,H_KMS,J_HMS,linesty=0,color='blue',th=thick
-         cgoplot,H_K_CTTS,J_H_CTTS,co='brown',li=2,th=thick
-         cgoplot,H_KRV,J_HRV,color='blue',th=thick,ps=-1,li=1,symsize=0.8
-         cgoplot,H_KRV2,J_HRV2,color='orange',th=thick,ps=-1,li=1,symsize=0.8
-         cgoplot,H_K_RV3,J_H_RV3,color='brown',th=thick,ps=-1,li=1      
+         cgoplot,H_KG,J_HG,linesty=0,color='orange',th=thick,/addcmd
+         cgoplot,H_KMS,J_HMS,linesty=0,color='blue',th=thick,/addcmd
+         cgoplot,H_K_CTTS,J_H_CTTS,color='brown',linestyle=2,th=thick,/addcmd
+         cgoplot,H_KRV,J_HRV,color='blue',th=thick,ps=-1,linestyle=1,symsize=0.8,/addcmd
+         cgoplot,H_KRV2,J_HRV2,color='orange',th=thick,ps=-1,linestyle=1,symsize=0.8,/addcmd
+         cgoplot,H_K_RV3,J_H_RV3,color='brown',th=thick,ps=-1,linestyle=1,/addcmd
       endif else begin
-         cgoplot,TwoMass_H_KsG,TwoMass_J_HG,linesty=0,color='orange',th=thick 
-         cgoplot,TwoMass_H_KsMS,TwoMass_J_HMS,linesty=0,color='blue',th=thick
-         cgoplot,TwoMass_H_Ks_CTTS,TwoMass_J_H_CTTS,co='brown',li=2,th=thick
-         cgoplot,TwoMass_H_KsRV,TwoMass_J_HRV,color='blue',th=thick,ps=-1,li=1,symsize=0.8
-         cgoplot,TwoMass_H_KsRV2,TwoMass_J_HRV2,color='orange',th=thick,ps=-1,li=1,symsize=0.8
-         cgoplot,TwoMass_H_Ks_RV3,TwoMass_J_H_RV3,color='brown',th=thick,ps=-1,li=1
+         cgoplot,TwoMass_H_KsG,TwoMass_J_HG,linesty=0,color='orange',th=thick ,/addcmd
+         cgoplot,TwoMass_H_KsMS,TwoMass_J_HMS,linesty=0,color='blue',th=thick,/addcmd
+         cgoplot,TwoMass_H_Ks_CTTS,TwoMass_J_H_CTTS,color='brown',linestyle=2,th=thick,/addcmd
+         cgoplot,TwoMass_H_KsRV,TwoMass_J_HRV,color='blue',th=thick,ps=-1,linestyle=1,symsize=0.8,/addcmd
+         cgoplot,TwoMass_H_KsRV2,TwoMass_J_HRV2,color='orange',th=thick,ps=-1,linestyle=1,symsize=0.8,/addcmd
+         cgoplot,TwoMass_H_Ks_RV3,TwoMass_J_H_RV3,color='brown',th=thick,ps=-1,linestyle=1,/addcmd
                                                                  
       endelse 
 
-      cgtext,0.25,0.8,'A!DV!N interval (+) = 5 mag',charsize=charsize,co='blue',/norm
+      cgtext,0.25,0.8,'A!DV!N interval (+) = 5 mag',charsize=charsize,co='blue',/norm,/addcmd
 
    endif  
 

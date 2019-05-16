@@ -211,6 +211,10 @@ pro create_ised_r17,target_ysoc=target_ysoc,sourcelist_ysoc=sourcelist_ysoc,xfov
   iSED = iSED[rasrt]
   
 ;  save,iSED,file='ised_r17.sav',/verbose
-  mwrfits,iSED,'ised_r17.fits',/create
+  if not keyword_set(target_xpms) then $
+     mwrfits,iSED,'ised_r17.fits',/create $
+  else $
+     mwrfits,iSED,'ised_r17+xpms.fits',/create $
+     
   
 end
