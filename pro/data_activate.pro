@@ -7,6 +7,8 @@ pro data_activate, data_in, data_out, nwav=nwav
      return
   endif
 
+  if not keyword_set(nwav) then nwav = 10
+  
   ;Read fitter datafile
   nlines = file_lines(data_in)
   lines = strarr(nlines)

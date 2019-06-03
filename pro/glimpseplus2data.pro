@@ -16,7 +16,9 @@ pro glimpseplus2data, glimpseplusfile, subset_type, data_out, subset=subset, sat
 ;                1: Perform cut using a specified coordinate box.
 ;                2: Select sources from a list of designations.
 ;                3: Select only sources flagged in a specified column 
-;                DEFAULT: SUBSET = 'ACISNAME'
+;                   DEFAULT: SUBSET = 'ACISNAME'
+;                -3: Select only sources NOT flagged in specified
+;                    column (opposite of SUBSET_TYPE = 3). 
 ;
 ;OUTPUT
 ;       DATA_OUT        'string' -- Path to output fitter datafile to
@@ -152,6 +154,28 @@ endif
            endcase 
            if n_sub eq 0 then begin
               print,'WARNING: No sources found with information in '+subset+' column! RETURNING.'
+              return
+           endif 
+        endif else begin
+           print,'WARNING: Column name '+subset+' does not exist in catalog table! RETURNING.'
+           return
+        endelse 
+     end
+
+     -3: begin
+        if not keyword_set(subset) then subset = 'ACISNAME'
+        if tag_exist(guv,subset,index=col_sub) then begin
+           case 1 of
+              isa(guv.(col_sub),/string): $
+                 ind_sub = where(strtrim(guv.(col_sub),2) eq '',n_sub)
+              isa(guv.(col_sub),/integer): $
+                 ind_sub = where(guv.(col_ind) eq 0,n_sub)
+              isa(guv.(col_sub),/float): $
+                 ind_sub = where(guv.(col_ind) eq !Values.F_NaN,n_sub)
+              else: n_sub = 0
+           endcase 
+           if n_sub eq 0 then begin
+              print,'WARNING: No sources found with NULL values in '+subset+' column! RETURNING.'
               return
            endif 
         endif else begin
