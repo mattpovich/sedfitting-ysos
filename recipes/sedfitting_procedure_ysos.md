@@ -177,6 +177,7 @@ This combines the best-fit models from all sets into SINGLE parameter tables for
 **%**
     
     tar cvzf fitinfo_r17_cpd04.tgz *sp*.fitinfo*
+    'rm' *sp*.fitinfo*
     'rm' pars_*g04.txt  
 
 ## CREATE THE `$TARGET.ised.fits` SUMMARIZING THE SED FITTING RESULTS  
