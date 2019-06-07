@@ -71,17 +71,11 @@ Once you have downloaded both the GLIMPSE and UKIDSS/VVV catalog tables for your
     glimpseplusfile = 'GLIMPSEc_plus.fits.gz'
     datafile = 'data_glimpse+'
     vvv = 0 ;Set to 1 if using VVV catalog instead of UKIDSS
-    select = 0  ;Set to 1 if CROPPING to coordinate box is desired, and specify below
     subset = 0
-    .run
-      if select eq 1 then begin  ;eg M17 SWex field
-        lmin = 13.694
-        lmax = 14.759
-        bmin = -1.0
-        bmax = -0.262
-        subset = [0.5*(lmin+lmax),0.5*(bmin+bmax),lmax-lmin,bmax-bmin]
-      endif
-    end
+    select = 0  ;Set to 1 if CROPPING to coordinate box is desired, and specify below
+    ;The values in the next command are for the M17 SWex field, change for your target:
+    ;                   subset= [lcen (deg), bcen (deg), dl ("), db (")]
+    if select eq 1 then subset= [14.226,     -0.631,     3834.,  2657  ]  
     glimpseplus2data,glimpseplusfile,select,datafile,vvv=vvv,subset=subset
 
 ## Estimate the maximum reddening to stars in the sample 
