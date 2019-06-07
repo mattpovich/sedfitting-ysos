@@ -71,7 +71,12 @@ There are three main ways you may have carved out a set of YSO candidates, so se
 
 I. *Proceeding from `find_ysoc_procedure`.* YSO candidates were identified from a combined NIR/MIR catalog using my "blind" IR-excess selection criteria for highly-contaminated fields. Congratulations, you already made `data_glimpse+ysoc`, so proceed to **Flag UGOs** below.
 
-II. *Proceeding from [`sedfitting_procedure_xpms`](https://github.com/mattpovich/sedfitting-phrds/blob/master/recipes/sedfitting_procedure_xpms.md).* YSO candidates were identified from a sample of IR counterparts to X-ray sources (or some other indicator of youth, e.g. H-alpha sources and/or a parallax/proper-motion-selected members of a young stellar cluster). In this case, your `$TARGET/sedfitter` directory should already contain two files, `xpms.fitinfo_bad` and `data_xir`. Use the following IDL command to create the new fitter data file:
+II. *Proceeding from [`sedfitting_procedure_xpms`](https://github.com/mattpovich/sedfitting-phrds/blob/master/recipes/sedfitting_procedure_xpms.md).* YSO candidates were identified from a sample of IR counterparts to X-ray sources (or some other indicator of youth, e.g. H-alpha sources and/or a parallax/proper-motion-selected members of a young stellar cluster). In this case, your `$TARGET/sedfitter` directory should already contain two files, `xpms.fitinfo_bad` and `data_xir`. Use the following python and IDL commands to create the new fitter data file:
+
+**>>>**
+
+	from sedfitter import write_parameters
+  	write_parameters('xpms.fitinfo_bad','pars_xpms_bad.txt',select_format=('A',-1))
 
 **IDL>**
 
