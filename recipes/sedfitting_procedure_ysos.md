@@ -175,6 +175,7 @@ This combines the best-fit models from all sets into SINGLE parameter tables for
 **Optional.** Free up disk space, for example (cpd=4):
 
 **%**
+    
     tar cvzf fitinfo_r17_cpd04.tgz *sp*.fitinfo*
     'rm' pars_*g04.txt  
 
