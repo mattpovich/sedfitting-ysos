@@ -148,7 +148,7 @@ If desired, iterate the above with modified values of aprad (aperture radius in 
 		   extinction_file=extinction24_file,
 		   n_data_min=3,  output_format=('F',6),
 		   distance_range=[2.9, 3.3] * u.kpc,
-		   av_range=[0.,100.], cpd=4.)
+		   av_range=[0.,50.], cpd=4.)
 
 
 OPTIONAL: Plot up some good (and bad) SED fits. The example below compares one disk-only with one disk+envelope model set:
