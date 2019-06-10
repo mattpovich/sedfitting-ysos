@@ -196,9 +196,22 @@ NOTE: The (OPTIONAL) regionfile *xfov.reg must contain one (or more) non-overlap
 
 **%**
     
-    ln ised_r17.fits ../$TARGET.ised.fits
-    ln ised_stageflag.reg ../$TARGET.stageflag.reg
+    cp ised_r17.fits ../$TARGET.ised.fits
+    cp ised_stageflag.reg ../$TARGET.stageflag.reg
+    
+**Variation:** *Include sources without IR excess that were fit by PMS models using [`sedfitting_procedure_xpms`](https://github.com/mattpovich/sedfitting-phrds/blob/master/recipes/sedfitting_procedure_xpms.md).*
 
+**IDL>**
+
+     target_xpms = 'results_xpms'	;OPTIONAL!
+     create_ised_r17, target_xpms=target_xpms
+
+**%**
+    
+    cp ised_r17+xpms.fits ../$TARGET.ised+xpms.fits
+    cp ised_stageflag.reg ../$TARGET.stageflag_123.reg
+    
+*End variation*
 
 
 
