@@ -76,12 +76,12 @@ endif
   if not keyword_set(append) then begin
      printf,u,'# Region file format: DS9 version 4.1'
      printf,u,'global color='+color+' dashlist=8 3 width=1 font="helvetica 10 normal" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 source=1'
-     printf,u,coord
+;     printf,u,coord
   endif 
   if not keyword_set(point) then begin
-     for i=0L,n-1 do printf,u,'circle('+strtrim(x[i],2)+', '+strtrim(y[i],2)+', '+strtrim(radius[i],2)+'") # color='+color+' tag={'+group[i]+'}'
+     for i=0L,n-1 do printf,u,strtrim(coord,2)+';circle('+strtrim(x[i],2)+', '+strtrim(y[i],2)+', '+strtrim(radius[i],2)+'") # color='+color+' tag={'+group[i]+'}'
   endif else begin
-     for i=0L,n-1 do printf,u,'point('+strtrim(x[i],2)+', '+strtrim(y[i],2)+') # point='+point+' '+strtrim(size,2) + ' color='+color+' tag={'+group[i]+'}'      
+     for i=0L,n-1 do printf,u,strtrim(coord,2)+';point('+strtrim(x[i],2)+', '+strtrim(y[i],2)+') # point='+point+' '+strtrim(size,2) + ' color='+color+' tag={'+group[i]+'}'      
   endelse 
   close,u
   free_lun,u

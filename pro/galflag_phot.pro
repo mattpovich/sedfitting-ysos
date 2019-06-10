@@ -146,7 +146,8 @@ endif
 
 ;The ELSE case should not happen if the sources have already been run through MALMCULL. Print warning message and add source to GALC list.
         else: begin 
-           print,'WARNING: Source ' + s.desig + ' was not detected at [3.6]! Flagging it as Galc.'
+;           print,'WARNING: Source ' + s.desig + ' was not detected at [3.6]! Flagging it as Galc.'
+           print,'WARNING: Source not detected at [3.6]! Flagging it as Galc.'
            galflags[i] = 1
            ngalc++
         end 

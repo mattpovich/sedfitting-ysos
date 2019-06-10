@@ -179,7 +179,7 @@ pro create_ised_r17,target_ysoc=target_ysoc,sourcelist_ysoc=sourcelist_ysoc,xfov
   ind_agb = where(ised.irmag[nband-2] - ised.irmag[nband-1] lt 2.2,nagb,complement=ind_notagb)
   iSED[ind_agb].SED_FLAG = 3
   print,nagb,' candidate AGB stars'
-  makereg_xy,iSED[ind_agb].radeg,iSED[ind_agb].dedeg,'ised_sedflag.reg',point='cross',color='green',size=9,/append
+  makereg_xy,iSED[ind_agb].ra,iSED[ind_agb].dec,'ised_sedflag.reg',point='cross',color='green',size=9,/append
 
   ;Classify stages
   stageflag_r17,target_ysoc,SED_STAGE,ambiguous=0.67,regionfile='ised_stageflag.reg',sourcelist=sourcelist_ysoc,fk5=keyword_set(fk5)
@@ -214,7 +214,7 @@ pro create_ised_r17,target_ysoc=target_ysoc,sourcelist_ysoc=sourcelist_ysoc,xfov
   if not keyword_set(target_xpms) then $
      mwrfits,iSED,'ised_r17.fits',/create $
   else $
-     mwrfits,iSED,'ised_r17+xpms.fits',/create $
+     mwrfits,iSED,'ised_r17+xpms.fits',/create
      
   
 end
