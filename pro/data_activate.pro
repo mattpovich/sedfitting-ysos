@@ -1,6 +1,6 @@
 ;Turn ON unused photometry datapoints by changing their flags to 1
 
-pro data_activate, data_in, data_out, nwav=nwav
+pro data_activate, data_in, data_out, nwav=nwav, ind_deactivate=ind_deactivate
 
   if n_params() lt 2 then begin
      print,'syntax -- data_activate, data_in, data_out, nwav=[10]'
@@ -43,14 +43,20 @@ pro data_activate, data_in, data_out, nwav=nwav
   endfor 
 
   ;Identify flags that need activation and set to 1
-  ind_activate = where(flags eq 0 and fluxes ne 0,n_activate)
-  flags[ind_activate] = 1
+  if not keyword_set(ind_deactivate) then begin
+     ind_activate = where(flags eq 0 and fluxes ne 0,n_activate)
+     flags[ind_activate] = 1
 
+                                ;SPECIAL! Turn OFF selected bands,
+                                ;irrespective of whether they have
+                                ;detections or not. HIDDEN FROM CALL.
+  endif else flags[*,ind_deactivate] = 0
+;  stop
                                 ;Put new flags back into data lines and write out new file
   openw,v,data_out,/get_lun
   for i=0L,nlines-1 do begin
      line = lines[i]
-     strput,line,string(flags[i,*],format='('+strtrim(nwav)+'(I1,1X))'),colstart[3]
+     strput,line,string(flags[i,*],format='('+strtrim(fix(nwav))+'(I1,1X))'),colstart[3]
      printf,v,line
   endfor 
   close, v

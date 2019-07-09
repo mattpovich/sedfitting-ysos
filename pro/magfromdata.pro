@@ -36,7 +36,8 @@ pro magfromdata,data_in,band,mags,e_mags,nwav=nwav,mk=mk
 ; * Updated magnitude zero-points for more precise
 ; * Removed histogram plotting functionality and associated keywords. 
 ; * Added E_MAGS output  -- 3 May 2019
- 
+; * Fixed case statement so that zerof and bandnames work for ALL
+; values of NWAV -- 11 June 2019 
   
 if n_params() lt 3 then begin
    print,'syntax: magfromdata, data_in, band, mags, e_mags, nwav=[10], /mk'
@@ -75,6 +76,13 @@ endif
 ;Read input datafile
   case 1 of             ;Dealing with multiple options for filters included in data file
      nwav eq 7: begin
+        ;              0    1   2     3         4       5       6  
+        bandnames = ['J','H','Ks','[3.6]','[4.5]','[5.8]','[8.0]']
+        zerof = 1.d3*[1577.,1050.,674.9,280.9,179.7,115.0,64.13]
+        if keyword_set(mk) then begin
+        bandnames[2] = 'K'
+        zerof[0:2] = 1.d3*[1531,1006.,663.1]
+     endif 
         readcol, data_in, $
            format='A,F,F,I,I,I,I,I,I,I,F,F,F,F,F,F,F,F,F,F,F,F,F,F', $
            name, l, b, $
@@ -85,6 +93,13 @@ endif
         df = [[df1], [df2], [df3], [df4], [df5], [df6],[df7] ]
      end
      nwav eq 8: begin
+        ;                  0   1   2     3   4   5       6       7     8        9       10
+        bandnames = ['J','H','Ks','[3.6]','[4.5]','[5.8]','[8.0]','[24]']
+        zerof = 1.d3*[1577.,1050.,674.9,280.9,179.7,115.0,64.13,7.17]
+        if keyword_set(mk) then begin
+           bandnames[2] = 'K'
+           zerof[0:2] = 1.d3*[1531,1006.,663.1]
+        endif 
         readcol, data_in, $
            format='A,F,F,I,I,I,I,I,I,I,I,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F', $
            name, l, b, $
@@ -96,19 +111,33 @@ endif
         zerof = [1577.,1050.,674.9,280.9,179.7,115.0,64.13]
      end
      nwav eq 10: begin
+        ;          0   1   2     3   4   5       6       7     8        9   
+        bandnames = ['J','H','Ks','2J','2H','2Ks','[3.6]','[4.5]','[5.8]','[8.0]']
+        zerof = 1.d3*[1577.,1050.,674.9,1577.,1050.,674.9,280.9,179.7,115.0,64.13]
+        if keyword_set(mk) then begin
+           bandnames[2] = 'K'
+           zerof[0:2] = 1.d3*[1531,1006.,663.1]
+        endif 
         readcol, data_in, $
-           format='A,F,F,I,I,I,I,I,I,I,I,I,I,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F', $
-           name, l, b, $
-           ff1,ff2,ff3,ff4,ff5,ff6,ff7,ff8,ff9,ff10, $
-           f1,df1,f2,df2,f3,df3,f4,df4,f5,df5,f6,df6,f7,df7,f8,df8,f9,df9,f10,df10 
+                 format='A,F,F,I,I,I,I,I,I,I,I,I,I,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F', $
+                 name, l, b, $
+                 ff1,ff2,ff3,ff4,ff5,ff6,ff7,ff8,ff9,ff10, $
+                 f1,df1,f2,df2,f3,df3,f4,df4,f5,df5,f6,df6,f7,df7,f8,df8,f9,df9,f10,df10 
         flag = [[ff1], [ff2], [ff3], [ff4], [ff5], [ff6], [ff7], [ff8], [ff9], [ff10] ]
         f = [[f1], [f2], [f3], [f4], [f5], [f6], [f7], [f8], [f9], [f10] ]
         df = [[df1], [df2], [df3], [df4], [df5], [df6], [df7], [df8], [df9], [df10] ]
      end 
      nwav eq 12: begin
+;                    0   1    2   3   4    5    6     7     8        9      10      11  
+        bandnames = ['Z','Y','J','H','Ks','2J','2H','2Ks','[3.6]','[4.5]','[5.8]','[8.0]']
+        zerof = 1.d3*[2128.,2072.,1577.,1050.,674.9,1577.,1050.,674.9,280.9,179.7,115.0,64.13]
+        if keyword_set(mk) then begin
+           bandnames[4] = 'K'
+           zerof[2:4] = [1531,1006.,663.1]
+        endif 
         readcol, data_in, $
-           name, l, b, $
-           format='A,F,F,I,I,I,I,I,I,I,I,I,I,I,I,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F', $
+                 name, l, b, $
+                 format='A,F,F,I,I,I,I,I,I,I,I,I,I,I,I,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F', $
            ff1,ff2,ff3,ff4,ff5,ff6,ff7,ff8,ff9,ff10,ff11,ff12, $
            f1,df1,f2,df2,f3,df3,f4,df4,f5,df5,f6,df6,f7,df7,f8,df8,f9,df9,f10,df10,f11,df11,f12,df12 
         flag = [[ff1], [ff2], [ff3], [ff4], [ff5], [ff6], [ff7], [ff8], [ff9], [ff10], [ff11], [ff12] ]
@@ -116,6 +145,13 @@ endif
         df = [[df1], [df2], [df3], [df4], [df5], [df6], [df7], [df8], [df9], [df10], [df11], [df12] ]
      end
      nwav eq 11: begin
+                ;     0   1   2     3   4   5       6       7     8        9       10
+        bandnames = ['J','H','Ks','2J','2H','2Ks','[3.6]','[4.5]','[5.8]','[8.0]','[24]']
+        zerof = 1.d3*[1577.,1050.,674.9,1577.,1050.,674.9,280.9,179.7,115.0,64.13,7.17]
+        if keyword_set(mk) then begin
+           bandnames[2] = 'K'
+           zerof[0:2] = 1.d3*[1531,1006.,663.1]
+        endif 
         readcol, data_in, $
            format='A,F,F,I,I,I,I,I,I,I,I,I,I,I,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F', $
            name, l, b, $
@@ -126,6 +162,13 @@ endif
         df = [[df1], [df2], [df3], [df4], [df5], [df6], [df7], [df8], [df9], [df10], [df11] ]
      end
      nwav eq 13: begin
+        ;             0   1    2   3   4    5    6     7     8        9      10      11     12
+        bandnames = ['Z','Y','J','H','Ks','2J','2H','2Ks','[3.6]','[4.5]','[5.8]','[8.0]','[24]']
+        zerof = 1.d3*[2128.,2072.,1577.,1050.,674.9,1577.,1050.,674.9,280.9,179.7,115.0,64.13,7.17]
+        if keyword_set(mk) then begin
+           bandnames[4] = 'K'
+           zerof[2:4] = [1531,1006.,663.1]
+        endif 
         readcol, data_in, $
            format='A,F,F,I,I,I,I,I,I,I,I,I,I,I,I,I,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F', $
            name, l, b, $
