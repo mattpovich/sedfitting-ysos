@@ -16,8 +16,8 @@
 ;(5)  IRMAG_ERR          = NBAND(F6.2) Uncertainties on IRMAG (NaN=non-detection, -99.99=upper limit used in fitting). 
 ;(X)  NIRPHOT_CAT        = 3(I2) Provenance of each JHK mag (0 = 2MASS, 1 = UKIDSS, -1 = none) DEPRECATED!
 ;(X)  NIRPHOT_NUM_SM     = (I1) Number of UKIDSS secondary matches to Spitzer catalog source. DEPRECATED!
-;(6)  SED_FLAG            = (I1) [-2] PMS models (no IRE), [-1] PMS
-;models (marginal IRE), 0 = likely YSO, 1 = candidate galaxy/PAH, 2 = candidate AGN, (NEW) 3 = candidate AGB star
+;(6)  SED_FLAG            = (I1)  [-1] No models
+;, 0 = likely YSO/diskless PMS, 1 = candidate galaxy/PAH, 2 = candidate AGN, (NEW) 3 = candidate AGB star
 ;(7)  SED_CHISQ_NORM     = (F6.3) Normalized chi-squared for best-fit model 
 ;(8) SED_AV             = (F7.2) Visual extinction (mag) to source from SED fits.
 ;(9) SED_AV_ERR          = (F7.2) Uncertainty on SED_AV (mag).
@@ -48,7 +48,11 @@ pro create_ised_r17,target_ysoc=target_ysoc,sourcelist_ysoc=sourcelist_ysoc,xfov
 ;    Added target_xpms=, sourcelist_xmps keyword functionality to
 ;    combine SCIM-X and MIRES catalog information into a single table.
 ;    Defined SED_FLAG < 0 and SED_STAGE = 3 for sources fith with PMS models.
-;    Added /FK5 switch in case input coordinates are celesial, not Galactic.
+;    Added /FK5 switch in case input coordinates are celesial, not
+;    Galactic.
+;               v1.2 - 15 August 2019 M. S. Povich
+;    Patch to allow inclusion in table of photometry NOT used in SED fitting
+;    (e.g. when H-band is ommitted).
   
   if not keyword_set(target_ysoc) then target_ysoc = 'results_ysoc'
 
@@ -142,14 +146,17 @@ pro create_ised_r17,target_ysoc=target_ysoc,sourcelist_ysoc=sourcelist_ysoc,xfov
      endelse 
 
      ;Convert fluxes to magnitudes and populate photometry arrays
-     bands_fit = where(s.valid ne 0,nfit)
+     bands_fit = where(s.valid ne 0,nfit)  ;Original, but see below for MAGS.
+     bands_present = where(s.f ne 0,npresent)
      bands_lim = where(s.valid eq 3,nlim)
      ndata = nfit - nlim
 
      mags = replicate(f_nan,nband)
      emags = replicate(f_nan,nband)
-     mags[bands_fit] = -2.5*alog10(s.f[bands_fit]/zerof[bands_fit])
-     emags[bands_fit] = s.df[bands_fit]/s.f[bands_fit]
+;     mags[bands_fit] = -2.5*alog10(s.f[bands_fit]/zerof[bands_fit])
+;     emags[bands_fit] = s.df[bands_fit]/s.f[bands_fit]
+     mags[bands_present] = -2.5*alog10(s.f[bands_present]/zerof[bands_present])
+     emags[bands_present] = s.df[bands_present]/s.f[bands_present]
      if nlim ne 0 then emags[bands_lim] = -99.99
 
      iSED[i].IRMAG = mags
@@ -167,13 +174,13 @@ pro create_ised_r17,target_ysoc=target_ysoc,sourcelist_ysoc=sourcelist_ysoc,xfov
   galflag_phot,mags,iSED.SED_AV,SED_FLAG,regionfile='ised_sedflag.reg', $
                ra=iSED.RA,dec=iSED.DEC
   iSED.SED_FLAG   = SED_FLAG 
-  if keyword_set(target_xpms) then begin
-     ind_stellar = where(SED_FLAG eq 0,n_stellar)
-     ind_pms = ind_stellar[where(ind_stellar ge n_yso,n_pms)]
-     if n_pms ne 0 then begin
-        iSED[n_yso:*].SED_FLAG = SED_FLAG[ind_pms]
-     endif 
-  endif
+  ;; if keyword_set(target_xpms) then begin
+  ;;    ind_stellar = where(SED_FLAG eq 0,n_stellar)
+  ;;    ind_pms = ind_stellar[where(ind_stellar ge n_yso,n_pms)]
+  ;;    if n_pms ne 0 then begin
+  ;;       iSED[n_yso:*].SED_FLAG = SED_FLAG[ind_pms]
+  ;;    endif 
+  ;; endif
 
                                 ;Flag possible AGB stars
   ind_agb = where(ised.irmag[nband-2] - ised.irmag[nband-1] lt 2.2,nagb,complement=ind_notagb)

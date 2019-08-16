@@ -90,7 +90,7 @@ def fit_multiyso(data, filter_names, apertures, models_topdir, n_data_min=3,
                      select_format=('A',-1)) 
     write_parameters('02_sp--h-i.fitinfo_good','pars_02g'+cpdstr+'.txt',
                      select_format=('A',-1)) 
-    write_parameters('14_spu-smi.fitinfo_good','pars_14g'+cpdstr+'txt',
+    write_parameters('14_spu-smi.fitinfo_good','pars_14g'+cpdstr+'.txt',
                      select_format=('A',-1)) 
     write_parameters('15_spu-hmi.fitinfo_good','pars_15g'+cpdstr+'.txt',
                      select_format=('A',-1)) 
