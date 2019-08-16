@@ -9,7 +9,8 @@ This recipe guides you through a series of color selections and SED fitting of r
 
 * Original sedfitting_procedure_ukidss-mir — 2011-08-24 by M. S. Povich 
 * Updated to use the [`python sedfitter`](https://github.com/astrofrog/sedfitter) — 2018-07-23 by M. S. Povich 
-* CURRENT (v1.0) — 2019-05-15 by M. S. Povich
+* Production v1.0 — 2019-05-15 by M. S. Povich
+* CURRENT v1.1 — 2019-08-16 by M. S. Povich
 
 I recommend using two different terminal windows simultaneously, one in `bash` and the other in `tcsh`. The correct shell in which to execute each block of command is indicated as follows:
  
@@ -61,6 +62,8 @@ Other surveys could be substituted (e.g. *WISE* for *Spitzer*/IRAC is an obvious
 
 I **strongly recommend** selecting the better of the duplicated 2MASS and UKIDSS/VVV *JHK(s)* fluxes and setting the flags for the *unused* fluxes to 0 initially. This will facilitate the filtering out of non-excess sources even in cases where there is disagreement in the near-IR fluxes due to variability or blending of sources. My own procedure for creating `data_glimpse+` (below) does exactly this, and the unused photometry can be re-activated later when fitting with YSO models.
 
+** IMPORTANT update in v1.1: ** We have discovered that the Kurucz stellar atmospheres used in all of our SED models do not accurately reproduce the H- opacity minimum at 1.65 µm for pre-main-sequence stars with photospheric temperatures in the range of 4000-5000 K. (See [Wing & Jorgensen 2003](https://www.aavso.org/media/jaavso/2016.pdf) for a good introduction to the relationship between _H_-band and H- opacity.) As a workaround, we _strongly recommend_ omitting _H_-band photometry from SED fitting with currently-available models.
+
 ### An automated option for producing the fitter data file 
 I have included with this distribution an `IDL` procedure, `glimpseplus2data.pro`, that automatically creates the fitter data file from a `.fits` table containing the requisite photometry columns. **WARNING: Currently this works only for GLIMPSE, not *WISE* or other MIR catalog formats.** 
 
@@ -96,17 +99,22 @@ Estimate the maximum reddening in *Av* magnitudes  by comparing the locus
   of stars to the reddening vectors (marked at intervals of *Av* = 5
   mag). Record the maximum value you estimated. *OPTIONAL: estimate and record a minimum Av if this is not zero.*
   
-## Filter out sources with colors consistent with stars, malmquist biases, and other photometry issues generally affecting longer wavelengths
+## Deactivate _H_-band photometry for subsequent SED fitting. Filter out sources with colors consistent with stars, malmquist biases, and other photometry issues generally affecting longer wavelengths
 
 This set of color cuts, described by [Povich et al. (2011)](https://doi.org/10.1088/0067-0049/194/1/14), gets rid of the vast majority of non-excess and "marginal"-excess sources, which greatly speeds up the next step and saves disk space.
 
 **IDL>**
 
-    datafile = 'data_glimpse+'
+    ;;; NEW in v1.1: Suppress _H_-band in SED fitting
+    data = 'data_glimpse+'
+    data_out = 'data_glimpse+noH'
+    ind_deactivate = [1,4] + shift
+    data_activate,data,data_out,nwav=nwav,ind_deactivate=ind_deactivate
+    
     maxav = 30. ;This is the MAXIMUM advisable value. Choose your own based on the maximum Av you determined above.
-    data_good = datafile + 'keep'
-    data_bad = datafile + 'toss'
-    malmcullav,datafile,data_good,data_bad,maxav=maxav,nwav=nwav
+    data_good = data_out + 'keep'
+    data_bad = data_out + 'toss'
+    malmcullav,data_out,data_good,data_bad,maxav=maxav,nwav=nwav
 
 
 ## FIT REMAINING SOURCES WITH REDDENED STELLAR PHOTOSPHERES
