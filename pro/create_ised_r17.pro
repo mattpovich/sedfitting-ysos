@@ -195,7 +195,7 @@ pro create_ised_r17,target_ysoc=target_ysoc,sourcelist_ysoc=sourcelist_ysoc,xfov
   else begin
      iSED[0:n_yso-1].SED_STAGE = SED_STAGE
      iSED[n_yso:*].SED_STAGE = 3
-     makereg_xy, iSED[n_yso:*].RA, iSED[n_yso:*].DEC, 'ised_stageflag.reg',color='dodgerblue',/append
+     makereg_xy, iSED[n_yso:*].RA, iSED[n_yso:*].DEC, 'ised_stageflag.reg',color='dodgerblue',/append,group='Stage III'
   endelse 
 
                                 ;Flag YSO candidates within ACIS FOV (OPTIONAL!)
